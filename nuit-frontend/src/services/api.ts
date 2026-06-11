@@ -16,7 +16,7 @@ export const api = axios.create({
     "Accept": "application/json",
   }
 });
-
+axios.defaults.withCredentials = true;
 // CSRF interception helper
 api.interceptors.request.use(async (config) => {
   const hasToken = typeof document !== "undefined" && document.cookie.includes("XSRF-TOKEN=");

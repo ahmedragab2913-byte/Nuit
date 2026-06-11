@@ -1,9 +1,8 @@
 # ===== الاتنين React =====
-nuit-frontend/node_modules/
-nuit-admin/node_modules/
+node_modules/
+**/node_modules/
 nuit-frontend/dist/
 nuit-admin/dist/
-node_modules/
 
 # ===== Laravel =====
 nuit-api/vendor/

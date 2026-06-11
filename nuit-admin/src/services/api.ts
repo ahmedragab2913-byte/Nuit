@@ -1,0 +1,215 @@
+import axios from "axios";
+import type { Product, Order, Customer, DashboardStats } from "../types";
+
+const hostname = typeof window !== "undefined" ? window.location.hostname : "127.0.0.1";
+const API_BASE = `http://${hostname}:8000/api/v1`;
+const SANCTUM_BASE = `http://${hostname}:8000`;
+
+export const api = axios.create({
+  baseURL: API_BASE,
+  withCredentials: true, // Enables cookie session sharing
+  headers: {
+    "Accept": "application/json",
+  }
+});
+
+api.interceptors.request.use(async (config) => {
+  // Ensure CSRF cookie is present; fetch it if missing
+  const hasToken = typeof document !== "undefined" && document.cookie.includes("XSRF-TOKEN=");
+  if (!hasToken) {
+    await getCsrfCookie();
+  }
+  if (typeof document !== "undefined") {
+    const csrfToken = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("XSRF-TOKEN="))
+      ?.split("=")[1];
+    if (csrfToken) {
+      config.headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
+    }
+  }
+  return config;
+}, (error) => Promise.reject(error));
+
+
+// Intercept 401 responses to clear session and redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Session expired or unauthenticated
+      window.dispatchEvent(new Event("admin-unauthorized"));
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ─── CSRF & AUTH SERVICE ───────────────────────────────────
+export const getCsrfCookie = async () => {
+  await axios.get(`${SANCTUM_BASE}/sanctum/csrf-cookie`, {
+    withCredentials: true,
+  });
+};
+
+export const apiLogin = async (credentials: Record<string, string>) => {
+  const res = await api.post("/admin/login", credentials);
+  return res.data;
+};
+
+export const apiLogout = async () => {
+  const res = await api.post("/logout");
+  return res.data;
+};
+
+export const apiGetMe = async () => {
+  const res = await api.get("/me");
+  return res.data;
+};
+
+// ─── DASHBOARD STATS SERVICE ───────────────────────────────
+export const getDashboardStats = async (): Promise<DashboardStats> => {
+  const res = await api.get("/dashboard/stats");
+  return res.data.data ?? res.data;
+};
+
+// ─── PRODUCTS CRUD SERVICE ─────────────────────────────────
+export const getProducts = async (): Promise<Product[]> => {
+  const res = await api.get("/products");
+  const data = res.data;
+  return Array.isArray(data) ? data : data.data ?? [];
+};
+// اذهب لملف src/services/api.ts (أو الملف اللي فيه الدوال)
+
+export const getProductswithPagination = async (
+  page = 1,
+  perPage = 12,
+  category?: string,
+  search?: string // 🌟 ضيف السطر ده هنا عشان الـ TypeScript يفهم المعامل الرابع
+): Promise<{
+  data: Product[];
+  current_page: number;
+  last_page: number;
+  total: number;
+}> => {
+  const params = new URLSearchParams({
+    page:     page.toString(),
+    per_page: perPage.toString(),
+  });
+
+  if (category && category !== "All") {
+    params.append("category", category);
+  }
+
+  // 🌟 تأكد برضه إنك بتضيفه للـ params عشان يتبعت للباك إند
+  if (search && search.trim() !== "") {
+    params.append("search", search.trim());
+  }
+
+  const res = await api.get(`/products?${params}`);
+  const raw = res.data;
+
+  const list = (Array.isArray(raw) ? raw : raw.data ?? []).map((p: any) => ({
+    ...p,
+    notes: Array.isArray(p.notes)
+      ? p.notes
+      : typeof p.notes === "string"
+      ? JSON.parse(p.notes)
+      : [],
+  }));
+
+  return {
+    data:         list,
+    current_page: raw.current_page ?? 1,
+    last_page:    raw.last_page    ?? 1,
+    total:        raw.total        ?? list.length,
+  };
+};
+
+export const createProduct = async (formData: FormData) => {
+  const res = await api.post("/products", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
+  return res.data;
+};
+
+export const updateProduct = async (id: number, formData: FormData | Record<string, any>) => {
+  // If it's a FormData object (photo upload), Laravel expects POST with _method=PUT due to PHP multipart limitations
+  if (formData instanceof FormData) {
+    if (!formData.has("_method")) {
+      formData.append("_method", "PUT");
+    }
+    const res = await api.post(`/products/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+    return res.data;
+  }
+  
+  // Standard PUT request for json payload
+  const res = await api.put(`/products/${id}`, formData);
+  return res.data;
+};
+
+export const deleteProduct = async (id: number) => {
+  const res = await api.delete(`/products/${id}`);
+  return res.data;
+};
+
+export const importProducts = async (formData: FormData) => {
+  const res = await api.post("/products/import", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
+  return res.data;
+};
+
+export const exportProductsBlob = async () => {
+  const res = await api.get("/products/export", { responseType: "blob" });
+  return res.data;
+};
+
+// ─── ORDERS SERVICE ────────────────────────────────────────
+export const getOrders = async (): Promise<Order[]> => {
+  const res = await api.get("/orders");
+  const data = res.data;
+  return Array.isArray(data) ? data : data.data ?? [];
+};
+
+export const updateOrderStatus = async (id: string, status: string) => {
+  const res = await api.patch(`/orders/${id}/status`, { status });
+  return res.data;
+};
+
+// ─── CUSTOMERS SERVICE ─────────────────────────────────────
+export const getCustomers = async (): Promise<Customer[]> => {
+  const res = await api.get("/customers");
+  const data = res.data;
+  return Array.isArray(data) ? data : data.data ?? [];
+};
+
+// ─── ANNOUNCEMENTS SERVICE ────────────────────────────────
+export interface Announcement {
+  id: number;
+  text: string;
+  is_active: boolean;
+  priority: number;
+}
+
+export const getAnnouncements = async (): Promise<Announcement[]> => {
+  const res = await api.get("/announcements/all");
+  const data = res.data;
+  return Array.isArray(data) ? data : data.data ?? [];
+};
+
+export const createAnnouncement = async (data: { text: string; is_active?: boolean; priority?: number }) => {
+  const res = await api.post("/announcements", data);
+  return res.data;
+};
+
+export const updateAnnouncement = async (id: number, data: Partial<Announcement>) => {
+  const res = await api.put(`/announcements/${id}`, data);
+  return res.data;
+};
+
+export const deleteAnnouncement = async (id: number) => {
+  const res = await api.delete(`/announcements/${id}`);
+  return res.data;
+};

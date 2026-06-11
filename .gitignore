@@ -1,0 +1,31 @@
+# ===== الاتنين React =====
+nuit-frontend/node_modules/
+nuit-admin/node_modules/
+nuit-frontend/dist/
+nuit-admin/dist/
+node_modules/
+
+# ===== Laravel =====
+nuit-api/vendor/
+nuit-api/bootstrap/cache/
+nuit-api/storage/*.key
+nuit-api/storage/logs/
+nuit-api/storage/framework/cache/
+nuit-api/storage/framework/sessions/
+nuit-api/storage/framework/views/
+
+# ===== Environment =====
+.env
+.env.local
+.env.*.local
+*/.env
+*/.env.local
+
+# ===== System =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+*.sqlite
+*.sqlite3

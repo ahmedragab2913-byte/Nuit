@@ -96,8 +96,12 @@ class AuthController extends Controller
     /**
      * Handle user registration.
      */
+    /**
+     * Handle user registration with detailed logging.
+     */
     public function register(Request $request): JsonResponse
     {
+        // 1. الـ Validation
         $data = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
@@ -105,37 +109,55 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        // 1. إنشاء المستخدم في الداتا بيز بنجاح
-        $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'phone'    => $data['phone'],
-            'password' => Hash::make($data['password']),
-            'role'     => 'customer',
-        ]);
-
-        // 2. حماية الـ Session والـ Cart لضمان عدم حدوث خطأ 500
         try {
-            Auth::login($user);
+            // 2. إنشاء المستخدم في الداتا بيز
+            $user = User::create([
+                'name'     => $data['name'],
+                'email'    => $data['email'],
+                'phone'    => $data['phone'],
+                'password' => Hash::make($data['password']),
+                'role'     => 'customer',
+            ]);
 
-            // محاولة دمج السلة إن وجدت جداولها مسبقاً
-            if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
-                $this->mergeGuestCart($user, $request->input('cart_items'));
+            // 3. تسجيل الدخول ومحاولة دمج السلة
+            try {
+                Auth::login($user);
+
+                if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
+                    $this->mergeGuestCart($user, $request->input('cart_items'));
+                }
+            } catch (\Exception $sessionException) {
+                // لو السلة أو السشن ضربوا، بنرمي Warning في الـ Log بس الـ Register بيكمل
+                \Illuminate\Support\Facades\Log::warning('Registration session/cart warning: ' . $sessionException->getMessage());
             }
-        } catch (\Exception $e) {
-            // تجاهل أي خطأ جانبي في الجلسات لضمان إتمام الرد بسلام للفرونت
-        }
 
-        return response()->json([
-            'status' => 'success',
-            'user'   => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'role'  => $user->role,
-            ]
-        ], 201);
+            // الرد الناجح في حال اكتمال الحفظ بسلام
+            return response()->json([
+                'status' => 'success',
+                'user'   => [
+                    'id'    => $user->id,
+                    'name'  => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'role'  => $user->role,
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            // 4. هنا السحر! لو أي حاجة ضربت في الداتا بيز أو الكود الأساسي، هيسجل الخطأ بالتفصيل في Railway Logs
+            \Illuminate\Support\Facades\Log::error('Registration Failed Error: ' . $e->getMessage(), [
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'input' => $request->except(['password']) // بنسجل كل الـ Inputs ما عدا الباسورد للأمان
+            ]);
+
+            // بنرجع الـ Error للـ Frontend عشان تشوفه في الـ Network Tab صريح
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Registration failed internal error.',
+                'error'   => $e->getMessage() 
+            ], 500);
+        }
     }
 
     /**

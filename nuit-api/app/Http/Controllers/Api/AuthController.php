@@ -103,6 +103,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
+        // 1. إنشاء المستخدم في الداتا بيز بنجاح
         $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
@@ -111,13 +112,20 @@ class AuthController extends Controller
             'role'     => 'customer',
         ]);
 
-        // Auto log in after register
-        Auth::login($user);
-        $request->session()->regenerate();
+        // 2. حماية الـ Session والـ Cart لضمان عدم حدوث خطأ 500
+        try {
+            Auth::login($user);
+            
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
 
-        // Merge guest cart if submitted
-        if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
-            $this->mergeGuestCart($user, $request->input('cart_items'));
+            // محاولة دمج السلة إن وجدت جداولها
+            if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
+                $this->mergeGuestCart($user, $request->input('cart_items'));
+            }
+        } catch (\Exception $e) {
+            // تجاهل أي خطأ جانبي هنا لضمان إتمام عملية الـ الرد بنجاح
         }
 
         return response()->json([

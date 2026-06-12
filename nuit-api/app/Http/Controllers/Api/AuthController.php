@@ -154,6 +154,8 @@ class AuthController extends Controller
             'message' => 'Logged out successfully.'
         ]);
     }
+
+    /**
      * Get the authenticated user with details.
      */
     public function me(Request $request): JsonResponse

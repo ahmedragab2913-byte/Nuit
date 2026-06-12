@@ -20,6 +20,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
+        'https://nuit-beryl.vercel.app',
         'http://localhost:5173',
         'http://localhost:5174',
         'http://127.0.0.1:5173',
@@ -37,5 +38,6 @@ return [
     'max_age' => 0,
 
     'supports_credentials' => true,
+    
 
 ];

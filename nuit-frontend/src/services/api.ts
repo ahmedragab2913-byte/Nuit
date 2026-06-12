@@ -1,9 +1,15 @@
 import axios from "axios";
 import type { Product } from "../types";
 
-const hostname = typeof window !== "undefined" ? window.location.hostname : "127.0.0.1";
-const API_BASE = `http://${hostname}:8000/api/v1`;
-const SANCTUM_BASE = `http://${hostname}:8000`;
+//const hostname = typeof window !== "undefined" ? window.location.hostname : "127.0.0.1";
+// 1. بنحدد الرابط الأساسي للسيرفر مرة واحدة ونؤمنه
+const BASE_URL = import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.startsWith('http')
+  ? import.meta.env.VITE_API_BASE_URL
+  : "http://127.0.0.1:8000";
+
+// 2. بنبني المسارات بناءً على الرابط الأساسي اللي فوق
+const API_BASE = `${BASE_URL}/api/v1`;
+const SANCTUM_BASE = BASE_URL; // اختصار ذكي بدون تكرار الـ condition
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -12,7 +18,7 @@ export const api = axios.create({
     "Accept": "application/json",
   }
 });
-
+axios.defaults.withCredentials = true;
 // CSRF interception helper
 api.interceptors.request.use(async (config) => {
   const hasToken = typeof document !== "undefined" && document.cookie.includes("XSRF-TOKEN=");

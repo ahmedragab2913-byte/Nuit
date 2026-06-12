@@ -59,10 +59,12 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
   register: async (credentials, guestCartItems = []) => {
     set({ loading: true, error: null });
     try {
-      await getCsrfCookie();
       const payload = { ...credentials, cart_items: guestCartItems };
       const res = await apiRegister(payload);
       if (res.status === "success" && res.user) {
+        if (res.token) {
+          localStorage.setItem("nuit_auth_token", res.token);
+        }
         set({
           user: res.user,
           isAuthenticated: true,
@@ -84,10 +86,12 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
   login: async (credentials, guestCartItems = []) => {
     set({ loading: true, error: null });
     try {
-      await getCsrfCookie();
       const payload = { ...credentials, cart_items: guestCartItems };
       const res = await apiLogin(payload);
       if (res.status === "success" && res.user) {
+        if (res.token) {
+          localStorage.setItem("nuit_auth_token", res.token);
+        }
         set({
           user: res.user,
           isAuthenticated: true,
@@ -113,6 +117,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     } catch (err) {
       console.error("Logout failed:", err);
     } finally {
+      localStorage.removeItem("nuit_auth_token");
       set({
         user: null,
         isAuthenticated: false,

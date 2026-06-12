@@ -15,19 +15,11 @@ export const api = axios.create({
   }
 });
 
-api.interceptors.request.use(async (config) => {
-  // Ensure CSRF cookie is present; fetch it if missing
-  const hasToken = typeof document !== "undefined" && document.cookie.includes("XSRF-TOKEN=");
-  if (!hasToken) {
-    await getCsrfCookie();
-  }
-  if (typeof document !== "undefined") {
-    const csrfToken = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("XSRF-TOKEN="))
-      ?.split("=")[1];
-    if (csrfToken) {
-      config.headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("nuit_admin_token");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
   }
   return config;
@@ -39,6 +31,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("nuit_admin_token");
+      }
       // Session expired or unauthenticated
       window.dispatchEvent(new Event("admin-unauthorized"));
     }
@@ -48,9 +43,7 @@ api.interceptors.response.use(
 
 // ─── CSRF & AUTH SERVICE ───────────────────────────────────
 export const getCsrfCookie = async () => {
-  await axios.get(`${SANCTUM_BASE}/sanctum/csrf-cookie`, {
-    withCredentials: true,
-  });
+  return Promise.resolve();
 };
 
 export const apiLogin = async (credentials: Record<string, string>) => {

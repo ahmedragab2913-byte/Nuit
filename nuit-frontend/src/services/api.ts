@@ -19,19 +19,12 @@ export const api = axios.create({
   }
 });
 axios.defaults.withCredentials = true;
-// CSRF interception helper
-api.interceptors.request.use(async (config) => {
-  const hasToken = typeof document !== "undefined" && document.cookie.includes("XSRF-TOKEN=");
-  if (!hasToken) {
-    await getCsrfCookie();
-  }
-  if (typeof document !== "undefined") {
-    const csrfToken = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("XSRF-TOKEN="))
-      ?.split("=")[1];
-    if (csrfToken) {
-      config.headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
+// Request interceptor to attach bearer token
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("nuit_auth_token");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
   }
   return config;
@@ -42,6 +35,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("nuit_auth_token");
+      }
       window.dispatchEvent(new Event("client-unauthorized"));
     }
     return Promise.reject(error);
@@ -49,9 +45,8 @@ api.interceptors.response.use(
 );
 
 export const getCsrfCookie = async () => {
-  await axios.get(`${SANCTUM_BASE}/sanctum/csrf-cookie`, {
-    withCredentials: true,
-  });
+  // Retained as a dummy function to avoid build breaking changes on imports
+  return Promise.resolve();
 };
 
 // ─── AUTHENTICATION SERVICES ──────────────────────────────────

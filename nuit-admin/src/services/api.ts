@@ -2,8 +2,10 @@ import axios from "axios";
 import type { Product, Order, Customer, DashboardStats } from "../types";
 
 const hostname = typeof window !== "undefined" ? window.location.hostname : "127.0.0.1";
-const API_BASE = `http://${hostname}:8000/api/v1`;
-const SANCTUM_BASE = `http://${hostname}:8000`;
+// Use Railway production URL if page is loaded from vercel, otherwise fallback to local/detected host
+const isProd = typeof window !== "undefined" && (window.location.hostname.includes("vercel.app") || window.location.hostname.includes("railway.app"));
+const API_BASE = isProd ? "https://nuit-production.up.railway.app/api/v1" : `http://${hostname}:8000/api/v1`;
+const SANCTUM_BASE = isProd ? "https://nuit-production.up.railway.app" : `http://${hostname}:8000`;
 
 export const api = axios.create({
   baseURL: API_BASE,

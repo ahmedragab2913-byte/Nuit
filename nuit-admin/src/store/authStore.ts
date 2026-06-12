@@ -26,12 +26,13 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   login: async (credentials) => {
     set({ loading: true, error: null });
     try {
-      // 1. Fetch CSRF Cookie first
-      await getCsrfCookie();
-      // 2. Submit Login request
+      // Submit Login request
       const data = await apiLogin(credentials);
       
       if (data.status === "success" && data.user) {
+        if (data.token) {
+          localStorage.setItem("nuit_admin_token", data.token);
+        }
         set({
           user: data.user,
           isAuthenticated: true,
@@ -58,6 +59,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
     } catch (err) {
       console.error("Logout failed:", err);
     } finally {
+      localStorage.removeItem("nuit_admin_token");
       set({
         user: null,
         isAuthenticated: false,

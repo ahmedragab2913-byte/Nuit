@@ -12,7 +12,6 @@ import {
   deleteAddress,
   setDefaultAddress,
   getMyOrders,
-  getCsrfCookie,
 } from "../services/api";
 
 interface UserProfile {

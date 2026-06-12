@@ -9,7 +9,6 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_B
 
 // 2. بنبني المسارات بناءً على الرابط الأساسي اللي فوق
 const API_BASE = `${BASE_URL}/api/v1`;
-const SANCTUM_BASE = BASE_URL; // اختصار ذكي بدون تكرار الـ condition
 
 export const api = axios.create({
   baseURL: API_BASE,

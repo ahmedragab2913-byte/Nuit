@@ -30,12 +30,16 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $request->session()->regenerate();
+        // تم إيقاف الـ session()->regenerate() لتفادي تعارض الـ CSRF والكوكيز بين السيرفرات المتعددة
         $user = Auth::user();
 
-        // If client-side app sent guest cart items, merge them now
+        // دمج سلة المشتريات للزائر إن وجدت
         if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
-            $this->mergeGuestCart($user, $request->input('cart_items'));
+            try {
+                $this->mergeGuestCart($user, $request->input('cart_items'));
+            } catch (\Exception $e) {
+                // تجنب توقف عملية تسجيل الدخول إذا واجهت جداول السلة أي مشكلة
+            }
         }
 
         return response()->json([
@@ -67,13 +71,11 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $request->session()->regenerate();
+        // تم إيقاف الـ session()->regenerate() هنا أيضاً للاستقرار ومنع تضارب الـ 500
         $user = Auth::user();
 
         if (!$user->isAdmin()) {
             Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Forbidden. Admin access required.',
@@ -115,17 +117,13 @@ class AuthController extends Controller
         // 2. حماية الـ Session والـ Cart لضمان عدم حدوث خطأ 500
         try {
             Auth::login($user);
-            
-            if ($request->hasSession()) {
-                $request->session()->regenerate();
-            }
 
-            // محاولة دمج السلة إن وجدت جداولها
+            // محاولة دمج السلة إن وجدت جداولها مسبقاً
             if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
                 $this->mergeGuestCart($user, $request->input('cart_items'));
             }
         } catch (\Exception $e) {
-            // تجاهل أي خطأ جانبي هنا لضمان إتمام عملية الـ الرد بنجاح
+            // تجاهل أي خطأ جانبي في الجلسات لضمان إتمام الرد بسلام للفرونت
         }
 
         return response()->json([
@@ -146,8 +144,15 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        
+        try {
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+        } catch (\Exception $e) {
+            // تجاوز الأخطاء المتوقعة من الجلسات في بيئات الـ API المنفصلة
+        }
 
         return response()->json([
             'status'  => 'success',

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getCsrfCookie, apiLogin, apiLogout, apiGetMe } from "../services/api";
+import { apiLogin, apiLogout, apiGetMe } from "../services/api";
 import type { User } from "../types";
 
 interface AuthStoreState {

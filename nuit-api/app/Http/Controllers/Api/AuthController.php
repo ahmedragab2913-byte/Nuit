@@ -101,6 +101,51 @@ class AuthController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Registration failed.'], 500);
         }
     }
+    /**
+     * Handle admin login and return API Token with role validation.
+     */
+    public function adminLogin(Request $request): JsonResponse
+    {
+        // 1. التحقق من البيانات المدخلة
+        $credentials = $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        // 2. محاولة تسجيل الدخول
+        if (!Auth::attempt($credentials)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Invalid email or password.',
+            ], 401);
+        }
+
+        $user = Auth::user();
+
+        // 🛡️ فحص أمني (QA Touch): تأكد إن اللي بيدخل ده أدمن فعلاً مش زبون عادي!
+        if ($user->role !== 'admin') {
+            Auth::logout(); // اقطع الجلسة فوراً
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Access denied. You do not have admin privileges.',
+            ], 403); // 403 Forbidden
+        }
+
+        // 🔑 توليد التوكن الخاص بالأدمن
+        $token = $user->createToken('admin_token')->plainTextToken;
+
+        return response()->json([
+            'status' => 'success',
+            'token'  => $token,
+            'user'   => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role'  => $user->role,
+            ]
+        ]);
+    }
 
     /**
      * Log the user out (Revoke token).

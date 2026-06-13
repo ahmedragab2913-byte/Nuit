@@ -9,22 +9,25 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+    /**
+     * Run the migrations.
+     */
     public function up(): void
-{
-    Schema::create('products', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-        $table->string('tagline');
-        $table->decimal('price', 8, 2);
-        $table->string('size');
-        $table->string('category');
-        $table->json('notes');          // مصفوفة النوتات
-        $table->text('description');
-        $table->string('image');        // URL أو مسار الصورة
-        $table->boolean('featured')->default(false);
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('products', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('tagline')->nullable(); // 💡 مسموح يكون فارغ
+            $table->decimal('price', 8, 2);
+            $table->string('size');
+            $table->string('category');
+            $table->json('notes')->nullable();    // 💡 مسموح يكون فارغ
+            $table->text('description');
+            $table->string('image');        
+            $table->boolean('featured')->default(false);
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Shop from "./pages/Shop";
@@ -16,28 +16,30 @@ import Login from "./pages/Login";
 import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
 
+// 🔐 1. واقي المسارات المحمية للزبائن (체크 التوكن)
+function ProtectedRoute() {
+  const token = localStorage.getItem("nuit_auth_token");
 
-// Storefront layout wrapper with Nav and Footer
+  // لو مفيش توكن محفوظ، روت المستخدم لصفحة اللوجين فوراً
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // لو التوكن موجود، خليه يكمل ويشوف الصفحة جوه الـ Layout عادي
+  return <Outlet />;
+}
+
+// 2. Storefront layout wrapper with Nav and Footer
 function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
-      {/*
-        ── HEADER SHELL (fixed) ──────────────────────────────────────
-        AnnouncementBar + Nav live inside ONE fixed container.
-        Bar shrinks to height:0 when empty → Nav moves up seamlessly.
-        No race-condition, no gap, ever.
-      */}
+      {/* ── HEADER SHELL (fixed) ── */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <AnnouncementBar />
         <Nav />
       </div>
 
-      {/*
-        ── CONTENT OFFSET ──────────────────────────────────────────
-        A non-fixed spacer pushes page content below the fixed header.
-        AnnouncementBar passes its current height via CSS var so this
-        stays in sync automatically.
-      */}
+      {/* ── CONTENT OFFSET ── */}
       <div id="header-spacer" style={{ height: "var(--header-h, 68px)", flexShrink: 0 }} />
 
       <main className="flex-grow">
@@ -53,25 +55,25 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Storefront pages */}
+        {/* 🌍 المسارات العامة المفتوحة لأي زائر */}
         <Route path="/" element={<StorefrontLayout><Home /></StorefrontLayout>} />
         <Route path="/shop" element={<StorefrontLayout><Shop /></StorefrontLayout>} />
         <Route path="/product/:id" element={<StorefrontLayout><Product /></StorefrontLayout>} />
         <Route path="/cart" element={<StorefrontLayout><Cart /></StorefrontLayout>} />
         <Route path="/about" element={<StorefrontLayout><About /></StorefrontLayout>} />
-        {/* Catch-all NotFound page */}
-        <Route path="*" element={<StorefrontLayout><NotFound /></StorefrontLayout>} />
         <Route path="/privacy-policy" element={<StorefrontLayout><PrivacyPolicy /></StorefrontLayout>} />
         <Route path="/terms-conditions" element={<StorefrontLayout><TermsConditions /></StorefrontLayout>} />
         <Route path="/new-arrivals" element={<StorefrontLayout><NewArrivals /></StorefrontLayout>} />
-
-        {/* Auth & User Pages (with layout) */}
         <Route path="/login" element={<StorefrontLayout><Login /></StorefrontLayout>} />
-        <Route path="/profile" element={<StorefrontLayout><Profile /></StorefrontLayout>} />
 
-        {/* Checkout (with layout) */}
-        <Route path="/checkout" element={<StorefrontLayout><Checkout /></StorefrontLayout>} />
+        {/* 🔒 المسارات المحمية (لازم يكون مسجل دخول ومعاه توكن) */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/profile" element={<StorefrontLayout><Profile /></StorefrontLayout>} />
+          <Route path="/checkout" element={<StorefrontLayout><Checkout /></StorefrontLayout>} />
+        </Route>
 
+        {/* 🚫 صفحة الخطأ لأي مسار غريب */}
+        <Route path="*" element={<StorefrontLayout><NotFound /></StorefrontLayout>} />
       </Routes>
     </Router>
   );

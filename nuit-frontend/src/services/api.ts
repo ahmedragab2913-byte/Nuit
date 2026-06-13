@@ -1,31 +1,27 @@
 import axios from "axios";
 import type { Product } from "../types";
 
-const hostname = typeof window !== "undefined" ? window.location.hostname : "127.0.0.1";
-const API_BASE = `http://${hostname}:8000/api/v1`;
-const SANCTUM_BASE = `http://${hostname}:8000`;
+//const hostname = typeof window !== "undefined" ? window.location.hostname : "127.0.0.1";
+// 1. بنحدد الرابط الأساسي للسيرفر مرة واحدة ونؤمنه
+const BASE_URL = import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.startsWith('http')
+  ? import.meta.env.VITE_API_BASE_URL
+  : "http://127.0.0.1:8000";
+
+// 2. بنبني المسارات بناءً على الرابط الأساسي اللي فوق
+const API_BASE = `${BASE_URL}/api/v1`;
 
 export const api = axios.create({
   baseURL: API_BASE,
-  withCredentials: true,
   headers: {
     "Accept": "application/json",
   }
 });
-
-// CSRF interception helper
-api.interceptors.request.use(async (config) => {
-  const hasToken = typeof document !== "undefined" && document.cookie.includes("XSRF-TOKEN=");
-  if (!hasToken) {
-    await getCsrfCookie();
-  }
-  if (typeof document !== "undefined") {
-    const csrfToken = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("XSRF-TOKEN="))
-      ?.split("=")[1];
-    if (csrfToken) {
-      config.headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
+// Request interceptor to attach bearer token
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("nuit_auth_token");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
   }
   return config;
@@ -36,6 +32,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("nuit_auth_token");
+      }
       window.dispatchEvent(new Event("client-unauthorized"));
     }
     return Promise.reject(error);
@@ -43,9 +42,8 @@ api.interceptors.response.use(
 );
 
 export const getCsrfCookie = async () => {
-  await axios.get(`${SANCTUM_BASE}/sanctum/csrf-cookie`, {
-    withCredentials: true,
-  });
+  // Retained as a dummy function to avoid build breaking changes on imports
+  return Promise.resolve();
 };
 
 // ─── AUTHENTICATION SERVICES ──────────────────────────────────

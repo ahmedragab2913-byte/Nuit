@@ -14,7 +14,7 @@ use App\Models\CartItem;
 class AuthController extends Controller
 {
     /**
-     * Handle user login and establish a stateful session.
+     * Handle user login and return API Token.
      */
     public function login(Request $request): JsonResponse
     {
@@ -30,16 +30,20 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $request->session()->regenerate();
         $user = Auth::user();
+        
+        // 🔑 توليد التوكن للفرونت إند
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-        // If client-side app sent guest cart items, merge them now
         if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
-            $this->mergeGuestCart($user, $request->input('cart_items'));
+            try {
+                $this->mergeGuestCart($user, $request->input('cart_items'));
+            } catch (\Exception $e) {}
         }
 
         return response()->json([
             'status' => 'success',
+            'token'  => $token,
             'user'   => [
                 'id'    => $user->id,
                 'name'  => $user->name,
@@ -51,48 +55,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle admin login (exclusive check for role == admin).
-     */
-    public function adminLogin(Request $request): JsonResponse
-    {
-        $credentials = $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required|string',
-        ]);
-
-        if (!Auth::attempt($credentials)) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Invalid email or password.',
-            ], 401);
-        }
-
-        $request->session()->regenerate();
-        $user = Auth::user();
-
-        if (!$user->isAdmin()) {
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Forbidden. Admin access required.',
-            ], 403);
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'user'   => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'role'  => $user->role,
-            ]
-        ]);
-    }
-
-    /**
-     * Handle user registration.
+     * Handle user registration and return API Token.
      */
     public function register(Request $request): JsonResponse
     {
@@ -103,43 +66,49 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'phone'    => $data['phone'],
-            'password' => Hash::make($data['password']),
-            'role'     => 'customer',
-        ]);
+        try {
+            $user = User::create([
+                'name'     => $data['name'],
+                'email'    => $data['email'],
+                'phone'    => $data['phone'],
+                'password' => Hash::make($data['password']),
+                'role'     => 'customer',
+            ]);
 
-        // Auto log in after register
-        Auth::login($user);
-        $request->session()->regenerate();
+            // 🔑 توليد التوكن فوراً بعد التسجيل
+            $token = $user->createToken('auth_token')->plainTextToken;
 
-        // Merge guest cart if submitted
-        if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
-            $this->mergeGuestCart($user, $request->input('cart_items'));
+            if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
+                try {
+                    $this->mergeGuestCart($user, $request->input('cart_items'));
+                } catch (\Exception $e) {}
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'token'  => $token,
+                'user'   => [
+                    'id'    => $user->id,
+                    'name'  => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'role'  => $user->role,
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Register Error: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Registration failed.'], 500);
         }
-
-        return response()->json([
-            'status' => 'success',
-            'user'   => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'role'  => $user->role,
-            ]
-        ], 201);
     }
 
     /**
-     * Log the user out (invalidate session).
+     * Log the user out (Revoke token).
      */
     public function logout(Request $request): JsonResponse
     {
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        // مسح التوكن الحالي اللي المستخدم داخل بيه
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'status'  => 'success',
@@ -148,12 +117,11 @@ class AuthController extends Controller
     }
 
     /**
-     * Get the authenticated user with details.
+     * Get the authenticated user.
      */
     public function me(Request $request): JsonResponse
     {
         $user = $request->user();
-
         return response()->json([
             'status' => 'success',
             'user'   => [
@@ -167,7 +135,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Update user profile editable fields (only name).
+     * Update profile (only name).
      */
     public function updateProfile(Request $request): JsonResponse
     {

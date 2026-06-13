@@ -9,7 +9,7 @@ import Products from "./pages/Products";
 import Orders from "./pages/Orders";
 import Customers from "./pages/Customers";
 import Announcements from "./pages/Announcements";
-import { getCsrfCookie } from "./services/api";
+// ❌ تم حذف الـ import الخاص بـ getCsrfCookie لأنه لم يعد مطلوباً مع الـ Tokens
 
 // 1. Private Route Wrapper
 function PrivateRoute() {
@@ -56,10 +56,7 @@ function DashboardLayout() {
 
 // 3. Main App Router
 export default function App() {
-  // Ensure CSRF token is set for admin API calls
-  useEffect(() => {
-    getCsrfCookie();
-  }, []);
+  // 🔑 تم تنظيف الـ useEffect القديم بنجاح لقطع أي اتصال بالـ CSRF التقليدي
 
   return (
     <Router>

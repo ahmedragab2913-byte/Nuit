@@ -7,40 +7,43 @@ export default function AnnouncementBar() {
   const [texts, setTexts] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  // تحديد الـ Base URL بناءً على البيئة الحالية (Development أو Production)
-  const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://127.0.0.1:8000/api/v1' 
-    : '/api/v1';
+  // 1. تأمين مسار الـ API بالكامل للـ Deployment ومقاومة الـ SPA HTML Rewrites
+  // تحديد الـ Base URL بناءً على البيئة الحالية (Local أو Railway Live)
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://127.0.0.1:8000/api/v1' 
+  : 'https://nuit-production.up.railway.app/api/v1'; // 👈 الرابط المباشر لسيرفر لارافيل على Railway // 👈 تأكد من إضافة VITE_API_BASE_URL في إعدادات Vercel
 
   useEffect(() => {
-    // تفعيل الـ Disable cache برمجياً بإضافة Timestamp اختيارية لقطع الـ 304 تماماً أثناء التطوير
+    // كسر الكاش لمنع الـ 304 والوصول المباشر لقاعدة البيانات
     fetch(`${API_BASE}/announcements?t=${new Date().getTime()}`, { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((data) => {
-        console.log("Fetched Announcements Original Data:", data);
+      .then((resData) => {
+        console.log("Fetched Announcements Original Data:", resData);
         
-        // 1. استخراج المصفوفة الأساسية سواء كانت مغلفة في data أم مفرودة مباشرة
-        const items = Array.isArray(data) ? data : (data.data ?? []);
+        // 2. مطابقة الـ Response Structure الجديد (resData.data) المقفل في الـ Controller
+        const items = resData && typeof resData === 'object' && 'data' in resData 
+          ? resData.data 
+          : (Array.isArray(resData) ? resData : []);
         
-        // 2. معالجة البيانات بمرونة تامة لتجنب الفلترة الخاطئة بسبب اختلاف الـ Types (0/1 أو true/false)
-        const result: string[] = items
-          .filter((a: any) => {
-            if (!a || typeof a === "string") return true;
+        // 3. معالجة وتصفية البيانات بأعلى معايير الأمان (Defensive Programming)
+        const result: string[] = Array.isArray(items) 
+          ? items
+              .filter((a: any) => {
+                if (!a) return false;
+                if (typeof a === "string") return true;
 
-            // قراءة حالة النشاط بدعم للمسميين (is_active أو active)
-            const isActiveValue = a.is_active !== undefined ? a.is_active : a.active;
-            
-            // تمرير العنصر طالما لم يتم إيقافه صراحة بـ false أو 0 أو "0"
-            return isActiveValue !== false && isActiveValue !== 0 && isActiveValue !== "0";
-          })
-          .map((a: any) => {
-            // لو العنصر مصفوفة نصوص مباشرة خده علطول، لو أوبجكت خذ الكي المناسب
-            return typeof a === "string" ? a : String(a.text || a.content || "");
-          })
-          .filter((text: string) => text.trim() !== ""); // استبعاد النصوص الفارغة
+                // قراءة الـ is_active الممرر الآن صراحة من الـ Controller
+                const isActiveValue = a.is_active !== undefined ? a.is_active : a.active;
+                return isActiveValue !== false && isActiveValue !== 0 && isActiveValue !== "0";
+              })
+              .map((a: any) => {
+                return typeof a === "string" ? a : String(a.text || a.content || "");
+              })
+              .filter((text: string) => text.trim() !== "")
+          : [];
 
         console.log("Processed Announcements Result:", result);
         setTexts(result);
@@ -54,12 +57,10 @@ export default function AnnouncementBar() {
     document.documentElement.style.setProperty("--header-h", `${h}px`);
   }, [loaded, texts]);
 
-  // لو لسه بيحمل أو مفيش أي نصوص راجعة، اقفل الشاشة تماماً وماتعرضش البار
+  // حارس العرض: منع ظهور أي مساحات فارغة أو تداخل في التصميم إذا لم تتوفر إعلانات نشطة
   if (!loaded || texts.length === 0) return null;
 
-  // دمج النصوص بفاصل أيقونة النجمة اللامعة ✦
   const single = texts.join("   ✦   ");
-  // تكرار النص 6 مرات لضمان ملء أي شاشة عرض ومتابعة الأنيميشن بسلاسة دائرية
   const segment = Array(6).fill(single).join("   ✦   ");
 
   return (
@@ -102,13 +103,11 @@ export default function AnnouncementBar() {
           position: "relative",
         }}
       >
-        {/* تأثير التدرج الخفيف على حواف البار الجانبية لجمالية العرض الفخم */}
         <div style={{
           position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
           background: "linear-gradient(to right, #080808 0%, transparent 6%, transparent 94%, #080808 100%)",
         }} />
 
-        {/* مسار الحركة الدائري اللانهائي (شريط متحرك) */}
         <div className="promo-track">
           <div className="promo-group">
             <span className="promo-item">{segment}</span>

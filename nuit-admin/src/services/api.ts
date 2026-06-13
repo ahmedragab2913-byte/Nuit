@@ -8,7 +8,6 @@ const API_BASE = isProd ? "https://nuit-production.up.railway.app/api/v1" : `htt
 
 export const api = axios.create({
   baseURL: API_BASE,
-  withCredentials: true, // Enables cookie session sharing
   headers: {
     "Accept": "application/json",
   }

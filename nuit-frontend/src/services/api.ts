@@ -12,12 +12,10 @@ const API_BASE = `${BASE_URL}/api/v1`;
 
 export const api = axios.create({
   baseURL: API_BASE,
-  withCredentials: true,
   headers: {
     "Accept": "application/json",
   }
 });
-axios.defaults.withCredentials = true;
 // Request interceptor to attach bearer token
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {

@@ -8,9 +8,10 @@ export default function AnnouncementBar() {
   const [loaded, setLoaded] = useState(false);
 
   // 1. تأمين مسار الـ API بالكامل للـ Deployment ومقاومة الـ SPA HTML Rewrites
-  const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://127.0.0.1:8000/api/v1' 
-    : (import.meta.env.VITE_API_BASE_URL || 'https://api.yourdomain.com/api/v1'); // 👈 تأكد من إضافة VITE_API_BASE_URL في إعدادات Vercel
+  // تحديد الـ Base URL بناءً على البيئة الحالية (Local أو Railway Live)
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://127.0.0.1:8000/api/v1' 
+  : 'https://nuit-production.up.railway.app/api/v1'; // 👈 الرابط المباشر لسيرفر لارافيل على Railway // 👈 تأكد من إضافة VITE_API_BASE_URL في إعدادات Vercel
 
   useEffect(() => {
     // كسر الكاش لمنع الـ 304 والوصول المباشر لقاعدة البيانات

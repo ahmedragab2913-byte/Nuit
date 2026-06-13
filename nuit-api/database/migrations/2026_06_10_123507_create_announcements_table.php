@@ -14,6 +14,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true); // تحديد الإعلان النشط حالياً
             $table->string('background_color')->default('#000000'); // اللون الافتراضي أسود فخم
             $table->string('text_color')->default('#ffffff'); // لون النص الافتراضي أبيض
+            $table->integer('priority')->default(0); // أو الترتيب اللي تحبه
             $table->timestamps();
         });
     }

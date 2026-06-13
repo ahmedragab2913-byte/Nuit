@@ -7,22 +7,30 @@ export default function AnnouncementBar() {
   const [texts, setTexts] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    fetch(`http://127.0.0.1:8000/api/v1/announcements`, { credentials: "include" })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        const items = Array.isArray(data) ? data : data.data ?? [];
-        const result: string[] = items
-          .filter((a: any) => a.is_active !== false)
-          .map((a: any) => String(a.text));
-        setTexts(result);
-      })
-      .catch(() => {})
-      .finally(() => setLoaded(true));
-  }, []);
+// هنشيل الرابط الثابت ونحط المسار مباشرة
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://127.0.0.1:8000/api/v1' 
+  : '/api/v1'; // ده المسار اللي هيشتغل في الـ Production
+
+useEffect(() => {
+  fetch(`${API_BASE}/announcements`, { credentials: "include" })
+    .then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
+    .then((data) => {
+      // طباعة الداتا عشان نتأكد إنها واصلة
+      console.log("Fetched Announcements:", data);
+      
+      const items = Array.isArray(data) ? data : (data.data ?? []);
+      const result: string[] = items
+        .filter((a: any) => a.is_active !== false)
+        .map((a: any) => String(a.text));
+      setTexts(result);
+    })
+    .catch((err) => console.error("Announcement Error:", err))
+    .finally(() => setLoaded(true));
+}, []);
 
   useEffect(() => {
     const h = loaded && texts.length > 0 ? BAR_H + NAV_H : NAV_H;

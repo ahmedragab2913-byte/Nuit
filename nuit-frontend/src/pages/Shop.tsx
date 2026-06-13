@@ -27,6 +27,7 @@ export default function Shop() {
   const [totalPages, setTotalPages]           = useState(1);
   const [total, setTotal]                     = useState(0);
   const [categories, setCategories]           = useState<string[]>(["All"]);
+  const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
 
   // 2. جلب الفئات وترتيبها ترتيب مخصص (Men -> Women -> Unisex)
   useEffect(() => {
@@ -90,6 +91,18 @@ export default function Shop() {
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  const handleAddToCart = (product: Product) => {
+  addToCart(product, 1);
+  setAddedIds(prev => new Set(prev).add(product.id));
+
+  setTimeout(() => {
+    setAddedIds(prev => {
+      const next = new Set(prev);
+      next.delete(product.id);
+      return next;
+    });
+  }, 3000);
+};
 
   return (
     <div className="bg-background text-foreground min-h-screen pt-32 pb-24 px-6 lg:px-16" style={sans}>
@@ -176,20 +189,20 @@ export default function Shop() {
                   >
                     {/* Image */}
                     <div className="relative aspect-[3/4] w-full bg-secondary overflow-hidden border border-border/40 mb-5">
-  <img
-    src={product.image}
-    alt={product.name}
-    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-  />
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      />
 
-  {/* 🌟 التعديل هنا: شارة نفاد الكمية */}
-  {(product.stock === 0) && (
-    <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-10">
-      <span className="bg-[#0c0c0c]/90 text-white/90 border border-white/10 px-3 py-1.5 text-[9px] uppercase tracking-widest font-light">
-        Sold Out
-      </span>
-    </div>
-  )}
+                      {/* شارة نفاد الكمية */}
+                      {(product.stock === 0) && (
+                        <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-10">
+                          <span className="bg-[#0c0c0c]/90 text-white/90 border border-white/10 px-3 py-1.5 text-[9px] uppercase tracking-widest font-light">
+                            Sold Out
+                          </span>
+                        </div>
+                      )}
 
                       {/* Wishlist */}
                       <button
@@ -202,30 +215,40 @@ export default function Shop() {
                       </button>
 
                       {/* Hover Overlay */}
-                      {/* Hover Overlay */}
-<div className={`absolute inset-0 bg-black/20 backdrop-blur-[2px] transition-opacity duration-300 flex flex-col items-center justify-center gap-3 z-20 ${
-  hoveredId === product.id ? "opacity-100" : "opacity-0 pointer-events-none"
-}`}>
-  {product.stock > 0 ? (
-    <button
-      onClick={e => { e.stopPropagation(); addToCart(product, 1); }}
-      className="w-44 bg-background text-foreground text-xs tracking-[0.15em] uppercase font-medium py-3 hover:bg-foreground hover:text-background transition-colors duration-300 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-    >
-      <ShoppingBag size={13} /> Add to Bag
-    </button>
+                      <div className={`absolute inset-0 bg-black/20 backdrop-blur-[2px] transition-opacity duration-300 flex flex-col items-center justify-center gap-3 z-20 ${
+                        hoveredId === product.id ? "opacity-100" : "opacity-0 pointer-events-none"
+                      }`}>
+                        {product.stock > 0 ? (
+                          <button
+  onClick={e => { e.stopPropagation(); handleAddToCart(product); }}
+  disabled={addedIds.has(product.id)}
+  className={`w-44 text-xs tracking-[0.15em] uppercase font-medium py-3 transition-colors duration-300 flex items-center justify-center gap-2 shadow-sm cursor-pointer ${
+    addedIds.has(product.id)
+      ? "bg-emerald-700 text-white cursor-not-allowed"
+      : "bg-background text-foreground hover:bg-foreground hover:text-background"
+  }`}
+>
+  {addedIds.has(product.id) ? (
+    <>Added</>
   ) : (
-    <div className="w-44 bg-zinc-800/80 text-zinc-400 text-xs tracking-[0.15em] uppercase font-medium py-3 border border-zinc-700/50 cursor-not-allowed flex items-center justify-center">
-      Sold Out
-    </div>
+    <>
+      <ShoppingBag size={13} /> Add to Bag
+    </>
   )}
-  
-  <button
-    onClick={() => navigate(`/product/${product.id}`, { state: { product } })}
-    className="w-44 bg-transparent border border-white/60 text-white text-xs tracking-[0.15em] uppercase font-medium py-3 hover:bg-white/10 transition-colors duration-300 flex items-center justify-center gap-2 backdrop-blur-sm cursor-pointer"
-  >
-    <Eye size={13} /> View Details
-  </button>
-</div>
+</button>
+                        ) : (
+                          <div className="w-44 bg-zinc-800/80 text-zinc-400 text-xs tracking-[0.15em] uppercase font-medium py-3 border border-zinc-700/50 cursor-not-allowed flex items-center justify-center">
+                            Sold Out
+                          </div>
+                        )}
+                        
+                        <button
+                          onClick={() => navigate(`/product/${product.id}`, { state: { product } })}
+                          className="w-44 bg-transparent border border-white/60 text-white text-xs tracking-[0.15em] uppercase font-medium py-3 hover:bg-white/10 transition-colors duration-300 flex items-center justify-center gap-2 backdrop-blur-sm cursor-pointer"
+                        >
+                          <Eye size={13} /> View Details
+                        </button>
+                      </div>
                     </div>
 
                     {/* Info */}
@@ -259,7 +282,8 @@ export default function Shop() {
                     {/* Mobile Buttons */}
                     <div className="mt-5 lg:hidden flex gap-2">
                       <button
-                        onClick={e => { e.stopPropagation(); addToCart(product, 1); }}
+                        onClick={e => { e.stopPropagation(); handleAddToCart(product); }}
+                        disabled={addedIds.has(product.id)}
                         className="flex-1 bg-foreground text-background text-xs tracking-[0.15em] uppercase font-medium py-2.5 flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <ShoppingBag size={12} /> Add
@@ -276,50 +300,114 @@ export default function Shop() {
               })}
             </div>
 
-            {/* Pagination */}
+            {/* Pagination (نظام ترقيم ذكي وموحد مع هوية السايت الفخمة) */}
             {totalPages > 1 && (
               <div className="flex flex-col items-center gap-4 mt-16">
                 <div className="flex items-center gap-6">
                   <button
                     onClick={() => goToPage(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+                    className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors cursor-pointer"
                   >
                     ‹ Prev
                   </button>
 
                   <div className="flex items-center gap-3">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        onClick={() => goToPage(page)}
-                        className={`text-[11px] tracking-widest transition-colors w-7 h-7 flex items-center justify-center ${
-                          currentPage === page
-                            ? "text-foreground border border-border"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
+                    {(() => {
+                      const pages = [];
+                      const maxVisible = 1; // عدد الصفحات حول الصفحة الحالية
 
-                  <button
-                    onClick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-                  >
-                    Next ›
-                  </button>
+                      // 1. الصفحة الأولى دائمًا
+                      pages.push(
+                        <button
+                          key={1}
+                          onClick={() => goToPage(1)}
+                          className={`text-[11px] tracking-widest transition-colors w-7 h-7 flex items-center justify-center cursor-pointer ${
+                            currentPage === 1
+                              ? "text-foreground border border-border font-medium"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          1
+                        </button>
+                      );
+
+                      // نقاط البداية
+                      if (currentPage > maxVisible + 2) {
+                        pages.push(<span key="dots-start" className="text-muted-foreground/40 text-xs px-0.5 select-none">...</span>);
+                      }
+
+                      // 2. الصفحات الديناميكية حول الحالية
+                      const start = Math.max(2, currentPage - maxVisible);
+                      const end = Math.min(totalPages - 1, currentPage + maxVisible);
+
+                      for (let i = start; i <= end; i++) {
+                        pages.push(
+                          <button
+                            key={i}
+                            onClick={() => goToPage(i)}
+                            className={`text-[11px] tracking-widest transition-colors w-7 h-7 flex items-center justify-center cursor-pointer ${
+                              currentPage === i
+                                ? "text-foreground border border-border font-medium"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {i}
+                          </button>
+                        );
+                      }
+
+                      // نقاط النهاية
+                      if (currentPage < totalPages - maxVisible - 1) {
+                        pages.push(<span key="dots-end" className="text-muted-foreground/40 text-xs px-0.5 select-none">...</span>);
+                      }
+
+                      // 3. الصفحة الأخيرة دائمًا
+                      if (totalPages > 1) {
+                        pages.push(
+                          <button
+                            key={totalPages}
+                            onClick={() => goToPage(totalPages)}
+                            className={`text-[11px] tracking-widest transition-colors w-7 h-7 flex items-center justify-center cursor-pointer ${
+                              currentPage === totalPages
+                                ? "text-foreground border border-border font-medium"
+                                : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {totalPages}
+                        </button>
+                      );
+                    }
+
+                    // 4. دمج الصفحات مع الفاصل المائل (/) بشكل متناسق ومريح للعين
+                    return pages.reduce((acc: React.ReactNode[], curr, index) => {
+                      if (index === 0) return [curr];
+                      return [
+                        ...acc,
+                        <span key={`sep-${index}`} className="text-muted-foreground/20 text-xs select-none">/</span>,
+                        curr
+                      ];
+                    }, []);
+                  })()}
                 </div>
 
-                <p className="text-[10px] text-muted-foreground tracking-wider">
-                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, total)} of {total} fragrances
-                </p>
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors cursor-pointer"
+                >
+                  Next ›
+                </button>
               </div>
-            )}
-          </>
-        )}
+
+              {/* نص عرض عدد المنتجات الحالي */}
+              <p className="text-[10px] text-muted-foreground tracking-wider">
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, total)} of {total} fragrances
+              </p>
+            </div>
+          )}
+        </>
+      )}
 
       </div>
     </div>

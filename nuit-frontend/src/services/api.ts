@@ -1,7 +1,6 @@
 import axios from "axios";
 import type { Product } from "../types";
 
-//const hostname = typeof window !== "undefined" ? window.location.hostname : "127.0.0.1";
 // 1. بنحدد الرابط الأساسي للسيرفر مرة واحدة ونؤمنه
 const BASE_URL = import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.startsWith('http')
   ? import.meta.env.VITE_API_BASE_URL
@@ -16,6 +15,7 @@ export const api = axios.create({
     "Accept": "application/json",
   }
 });
+
 // Request interceptor to attach bearer token
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
@@ -81,6 +81,7 @@ export const getProducts = async (): Promise<Product[]> => {
     notes: Array.isArray(p.notes) ? p.notes : (typeof p.notes === "string" ? JSON.parse(p.notes) : [])
   }));
 };
+
 export const getProductswithPagination = async (
   page = 1,
   perPage = 12,
@@ -120,10 +121,46 @@ export const getProductswithPagination = async (
   };
 };
 
+// 🔥 الميثود الجديدة للأكثر مبيعاً مع معالجة الـ Pagination والـ JSON الراجع من الباكيند
+export const getBestSellers = async (
+  page = 1,
+  perPage = 8
+): Promise<{
+  data: Product[];
+  current_page: number;
+  last_page: number;
+  total: number;
+}> => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    per_page: perPage.toString(),
+  });
+
+  const res = await api.get(`/products/best-sellers?${params}`);
+  const raw = res.data;
+
+  // 🛡️ معالجة داتا المنتجات والتأكد من تحويل حقل الـ notes المصفوفة
+  const list = (Array.isArray(raw.data) ? raw.data : raw ?? []).map((p: any) => ({
+    ...p,
+    notes: Array.isArray(p.notes)
+      ? p.notes
+      : typeof p.notes === "string"
+      ? JSON.parse(p.notes)
+      : [],
+  }));
+
+  return {
+    data:         list,
+    current_page: raw.pagination?.current_page ?? raw.current_page ?? 1,
+    last_page:    raw.pagination?.last_page    ?? raw.last_page    ?? 1,
+    total:        raw.pagination?.total        ?? raw.total        ?? list.length,
+  };
+};
+
 export const getCategories = async (): Promise<string[]> => {
   const res = await api.get("/products/categories");
   return res.data ?? [];
-};;
+};
 
 // ─── ADDRESS MANAGEMENT ───────────────────────────────────────
 export interface Address {
@@ -168,9 +205,10 @@ export const getDBCart = async () => {
   return res.data.data;
 };
 
-export const syncDBCart = async (items: { product_id: number; quantity: number }[]) => {
-  const res = await api.post("/cart/sync", { items });
-  return res.data.data;
+export const syncDBCart = async (payload: { items: { product_id: number; quantity: number; }[] }) => {
+  // ✅ استخدم api وباصي على مسار /cart/sync المظبوط المتناسق مع لارافيل
+  const response = await api.post('/cart/sync', payload);
+  return response.data;
 };
 
 // ─── CHECKOUT & ORDER HISTORY ───────────────────────────────

@@ -32,26 +32,38 @@ class CartController extends Controller
 
     public function syncCart(Request $request): JsonResponse
     {
+        // 1. غلق ثغرة المصفوفة المفرودة لو مبعوتة مباشرة
+        if ($request->isJson() && ! $request->has('items') && is_array($request->json()->all())) {
+            $request->merge(['items' => $request->json()->all()]);
+        } elseif (! $request->has('items') && is_array($request->all())) {
+            $request->merge(['items' => $request->all()]);
+        }
+
+        // 2. تعديل الـ Validation: الـ items مسموح تكون مصفوفة فاضية (sometimes)
         $request->validate([
-            'items'              => 'required|array',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity'   => 'required|integer|min:1',
+            'items'              => 'present|array', 
+            'items.*.product_id' => 'required_with:items|exists:products,id',
+            'items.*.quantity'   => 'required_with:items|integer|min:1',
         ]);
 
         $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
 
-        // Clear existing items in DB
+        // 3. مسح العناصر الحالية دائماً لتحديث الحالة
         CartItem::where('cart_id', $cart->id)->delete();
 
-        // Save incoming items
-        foreach ($request->input('items') as $item) {
-            CartItem::create([
-                'cart_id'    => $cart->id,
-                'product_id' => $item['product_id'],
-                'quantity'   => $item['quantity'],
-            ]);
+        // 4. حفظ العناصر الجديدة فقط لو الـ array مش فاضية
+        $items = $request->input('items', []);
+        if (!empty($items)) {
+            foreach ($items as $item) {
+                CartItem::create([
+                    'cart_id'    => $cart->id,
+                    'product_id' => $item['product_id'],
+                    'quantity'   => $item['quantity'],
+                ]);
+            }
         }
 
+        // 5. إرجاع السلة المحدثة (حتى لو فاضية) بـ status 200 نجاح
         return $this->getCart($request);
     }
 

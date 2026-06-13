@@ -11,6 +11,7 @@ export default function Product() {
   const navigate = useNavigate();
   const [qty, setQty] = useState(1);
   const [copied, setCopied] = useState(false);
+  const [added, setAdded] = useState(false);
   const { products, loading, error, wishlisted, fetchProducts, addToCart, toggleWish } = useCartStore();
 
   useEffect(() => {
@@ -198,15 +199,20 @@ export default function Product() {
                 </button>
               ) : (
                 <button
-                  onClick={() => {
-                    addToCart(product, qty);
-                    navigate("/cart");
-                    window.scrollTo(0, 0);
-                  }}
-                  className="flex-1 bg-primary text-primary-foreground text-[10px] tracking-[0.25em] uppercase py-4 hover:bg-primary/85 transition-colors cursor-pointer"
-                >
-                  Add to Cart 
-                </button>
+  onClick={() => {
+    addToCart(product, qty);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 3000);
+  }}
+  disabled={added}
+  className={`flex-1 text-[10px] tracking-[0.25em] uppercase py-4 transition-colors cursor-pointer ${
+    added
+      ? "bg-emerald-700 text-white cursor-not-allowed"
+      : "bg-primary text-primary-foreground hover:bg-primary/85"
+  }`}
+>
+  {added ? "Added ✓" : "Add to Cart"}
+</button>
               )}
 
               <button

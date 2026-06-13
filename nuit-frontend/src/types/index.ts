@@ -10,6 +10,7 @@ export interface Product {
   image: string;
   featured?: boolean;
   stock: number;
+  sales: number; // عدد المبيعات
 }
 
 export interface CartItem {

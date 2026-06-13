@@ -10,7 +10,7 @@ const sans  = { fontFamily: "'Raleway', sans-serif" };
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { isAuthenticated, addresses, fetchAddresses, addAddress, loading: authLoading } = useAuthStore();
+  const { isAuthenticated, addresses, fetchAddresses, addAddress } = useAuthStore();
   const { cart, clearCart } = useCartStore();
 
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
@@ -18,7 +18,7 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // New Address form state
+  // Address form state
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [country] = useState("egypt");
   const [city, setCity] = useState("");
@@ -28,7 +28,7 @@ export default function Checkout() {
   const [apartment, setApartment] = useState("");
   const [savingAddress, setSavingAddress] = useState(false);
 
-  // 1. Guard Protection: Redirect if not logged in
+  // 1. Guard Protection
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login?redirect=/checkout", { replace: true });
@@ -37,21 +37,17 @@ export default function Checkout() {
     }
   }, [isAuthenticated, navigate, fetchAddresses]);
 
-  // 2. Set default address as selected when addresses load
+  // 2. Set default address
   useEffect(() => {
     if (addresses.length > 0) {
       const defaultAddr = addresses.find(a => a.is_default);
-      if (defaultAddr) {
-        setSelectedAddressId(defaultAddr.id);
-      } else {
-        setSelectedAddressId(addresses[0].id);
-      }
+      setSelectedAddressId(defaultAddr ? defaultAddr.id : addresses[0].id);
     } else {
       setSelectedAddressId(null);
     }
   }, [addresses]);
 
-  // If cart is empty, redirect to cart page
+  // 3. Redirect if cart is empty (تم تأمينه لمنع التداخل أثناء الـ submission الناجح)
   useEffect(() => {
     if (cart.length === 0 && !submitting) {
       navigate("/cart");
@@ -85,8 +81,6 @@ export default function Checkout() {
         setBuilding("");
         setFloor("");
         setApartment("");
-      } else {
-        setError("Failed to save address.");
       }
     } catch (err) {
       setError("An error occurred while saving the address.");
@@ -101,10 +95,13 @@ export default function Checkout() {
       return;
     }
 
+    let isSuccess = false;
+
     try {
       setSubmitting(true);
       setError(null);
 
+      // بناء الـ items المظبوط حسب الـ Validation في الـ Controller
       const itemsPayload = cart.map(i => ({
         product_id: i.product.id,
         quantity: i.quantity,
@@ -116,11 +113,21 @@ export default function Checkout() {
         items: itemsPayload,
       });
 
-      if (res.status === "success") {
-        // Clear local cart
-        clearCart();
-        // Redirect to profile page (which holds order history)
-        navigate("/profile?order_success=true");
+      // التحقق بناءً على الـ Response الراجع من الـ OrderController الخاص بك
+      if (res.status === "success" && res.data) {
+        isSuccess = true;
+
+        // ✅ الخطوة 1: انقل اليوزر فوراً لصفحة التأكيد وباصي الـ order data
+        navigate("/order-confirmation", { 
+          state: { 
+            order: res.data 
+          } 
+        });
+
+        // ✅ الخطوة 2: فضي السلة بعد الـ navigation عشان الـ Guard useEffect الحارس م يلحقش يشتغل ويحول لـ /cart
+        setTimeout(() => {
+          clearCart();
+        }, 100);
       } else {
         setError(res.message || "Failed to place order.");
       }
@@ -129,11 +136,14 @@ export default function Checkout() {
       console.error("Checkout failed:", err);
       setError(err.response?.data?.message || err.message || "Checkout failed. Please try again.");
     } finally {
-      setSubmitting(false);
+      // تأمين: سيب الـ submitting بـ true لو العملية نجحت عشان الـ Guard ميعملش ريفريش مفاجئ
+      if (!isSuccess) {
+        setSubmitting(false);
+      }
     }
   };
 
-  if (!isAuthenticated || cart.length === 0) {
+  if (!isAuthenticated || (cart.length === 0 && !submitting)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <span className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
@@ -157,10 +167,10 @@ export default function Checkout() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
         
-        {/* Left Columns: Delivery Details & Payment */}
+        {/* Delivery Details & Payment */}
         <div className="lg:col-span-2 space-y-12">
           
-          {/* Address selection Section */}
+          {/* Address Section */}
           <div className="border-b border-border/40 pb-10">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-light text-foreground uppercase tracking-wider" style={serif}>1. Delivery Address</h2>
@@ -174,7 +184,6 @@ export default function Checkout() {
               )}
             </div>
 
-            {/* Address List */}
             {!showAddressForm && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {addresses.map((addr) => {
@@ -191,7 +200,7 @@ export default function Checkout() {
                     >
                       <MapPin size={14} className="text-muted-foreground mb-3" />
                       <p className="text-xs text-foreground font-semibold mb-1">
-                        {country}, {addr.city}
+                        {country.toUpperCase()}, {addr.city}
                       </p>
                       <p className="text-[11px] text-muted-foreground/80 leading-relaxed font-light mb-1">
                         {addr.street}, Building {addr.building}
@@ -217,105 +226,52 @@ export default function Checkout() {
 
                 {addresses.length === 0 && (
                   <div className="md:col-span-2 border border-border/40 border-dashed p-8 text-center flex flex-col items-center justify-center">
-                    <p className="text-xs text-muted-foreground font-light mb-4">No delivery addresses saved in your profile yet.</p>
+                    <p className="text-xs text-muted-foreground font-light mb-4">No delivery addresses saved yet.</p>
                     <button
                       onClick={() => setShowAddressForm(true)}
                       className="border border-border/80 hover:border-primary hover:text-primary transition-all px-6 py-2.5 text-[9px] uppercase tracking-widest text-foreground font-medium cursor-pointer"
                     >
-                      Add Address to Profile
+                      Add Address
                     </button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Add Address Form */}
             {showAddressForm && (
               <form onSubmit={handleAddAddress} className="bg-secondary/20 border border-border/50 p-6 md:p-8 space-y-4">
                 <h3 className="text-xs tracking-wider uppercase text-foreground mb-2">New Address Details</h3>
-                
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[9px] uppercase text-muted-foreground/80 mb-1">Country</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={country}
-                      className="w-full bg-background border border-border/50 px-3 py-2 text-xs text-muted-foreground outline-none cursor-not-allowed"
-                    />
+                    <input type="text" disabled value={country} className="w-full bg-background border border-border/50 px-3 py-2 text-xs text-muted-foreground outline-none cursor-not-allowed uppercase" />
                   </div>
                   <div>
-                    <label className="block text-[9px] uppercase text-muted-foreground/80 mb-1">City / Region *</label>
-                    <input
-                      type="text"
-                      required
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="Cairo / Giza"
-                      className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/40"
-                    />
+                    <label className="block text-[9px] uppercase text-muted-foreground/80 mb-1">City *</label>
+                    <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} placeholder="Cairo / Giza" className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary" />
                   </div>
                 </div>
-
                 <div>
-                  <label className="block text-[9px] uppercase text-muted-foreground/80 mb-1">Street / Address Details *</label>
-                  <input
-                    type="text"
-                    required
-                    value={street}
-                    onChange={(e) => setStreet(e.target.value)}
-                    placeholder="El-Nasr St, Maadi"
-                    className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/40"
-                  />
+                  <label className="block text-[9px] uppercase text-muted-foreground/80 mb-1">Street Address *</label>
+                  <input type="text" required value={street} onChange={(e) => setStreet(e.target.value)} placeholder="El-Nasr St." className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary" />
                 </div>
-
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[9px] uppercase text-muted-foreground/80 mb-1">Building *</label>
-                    <input
-                      type="text"
-                      required
-                      value={building}
-                      onChange={(e) => setBuilding(e.target.value)}
-                      placeholder="No. 12"
-                      className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/40"
-                    />
+                    <input type="text" required value={building} onChange={(e) => setBuilding(e.target.value)} placeholder="12" className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary" />
                   </div>
                   <div>
                     <label className="block text-[9px] uppercase text-muted-foreground/80 mb-1">Floor</label>
-                    <input
-                      type="text"
-                      value={floor}
-                      onChange={(e) => setFloor(e.target.value)}
-                      placeholder="4th"
-                      className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/40"
-                    />
+                    <input type="text" value={floor} onChange={(e) => setFloor(e.target.value)} placeholder="4" className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary" />
                   </div>
                   <div>
                     <label className="block text-[9px] uppercase text-muted-foreground/80 mb-1">Apartment</label>
-                    <input
-                      type="text"
-                      value={apartment}
-                      onChange={(e) => setApartment(e.target.value)}
-                      placeholder="Apt 42"
-                      className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/40"
-                    />
+                    <input type="text" value={apartment} onChange={(e) => setApartment(e.target.value)} placeholder="42" className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary" />
                   </div>
                 </div>
-
                 <div className="flex justify-end gap-3 pt-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddressForm(false)}
-                    className="border border-border/80 hover:border-foreground/20 px-4 py-2 text-[9px] uppercase tracking-wider text-muted-foreground cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={savingAddress}
-                    className="bg-foreground text-background hover:bg-foreground/90 px-6 py-2 text-[9px] uppercase tracking-wider font-semibold disabled:opacity-40 cursor-pointer"
-                  >
+                  <button type="button" onClick={() => setShowAddressForm(false)} className="border border-border/80 px-4 py-2 text-[9px] uppercase tracking-wider text-muted-foreground cursor-pointer">Cancel</button>
+                  <button type="submit" disabled={savingAddress} className="bg-foreground text-background px-6 py-2 text-[9px] uppercase tracking-wider font-semibold disabled:opacity-40 cursor-pointer">
                     {savingAddress ? "Saving..." : "Save Address"}
                   </button>
                 </div>
@@ -323,56 +279,34 @@ export default function Checkout() {
             )}
           </div>
 
-          {/* Payment Method section */}
+          {/* Payment Method */}
           <div>
             <h2 className="text-xl font-light text-foreground uppercase tracking-wider mb-6" style={serif}>2. Payment Method</h2>
-            
             <div className="space-y-4">
               <div 
                 onClick={() => setPaymentMethod("cash_on_delivery")}
                 className={`p-5 border cursor-pointer flex justify-between items-center transition-all ${
-                  paymentMethod === "cash_on_delivery"
-                    ? "border-primary bg-secondary/30"
-                    : "border-border/50 bg-background hover:border-border"
+                  paymentMethod === "cash_on_delivery" ? "border-primary bg-secondary/30" : "border-border/50 bg-background hover:border-border"
                 }`}
               >
                 <div>
                   <p className="text-xs text-foreground font-semibold mb-0.5">Cash on Delivery (COD)</p>
                   <p className="text-[10px] text-muted-foreground font-light">Pay with cash upon package receipt.</p>
                 </div>
-                <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                  paymentMethod === "cash_on_delivery" ? "border-primary bg-primary" : "border-border/80"
-                }`}>
+                <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${paymentMethod === "cash_on_delivery" ? "border-primary bg-primary" : "border-border/80"}`}>
                   {paymentMethod === "cash_on_delivery" && <span className="w-1.5 h-1.5 bg-background rounded-full" />}
                 </span>
               </div>
-
-              {/* Disabled future payment options */}
-              {["card", "paypal", "stripe"].map((payOption) => (
-                <div 
-                  key={payOption}
-                  className="p-5 border border-border/30 bg-secondary/5 opacity-55 flex justify-between items-center select-none"
-                >
-                  <div>
-                    <p className="text-xs text-muted-foreground/85 font-semibold capitalize mb-0.5">
-                      {payOption === "card" ? "Credit / Debit Card" : payOption}
-                    </p>
-                    <p className="text-[9px] text-primary tracking-wider uppercase font-semibold">Coming Soon</p>
-                  </div>
-                  <span className="w-3.5 h-3.5 rounded-full border border-border/40" />
-                </div>
-              ))}
             </div>
           </div>
 
         </div>
 
-        {/* Right Column: Order Summary & Place Order CTA */}
+        {/* Order Summary & CTA */}
         <div className="lg:col-span-1">
           <div className="bg-secondary/50 border border-border p-8 sticky top-28 backdrop-blur-sm">
             <h3 className="text-xl font-light text-foreground mb-6" style={serif}>Cart Summary</h3>
             
-            {/* Cart Items list */}
             <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2 mb-6 border-b border-border/40 pb-6">
               {cart.map((item) => (
                 <div key={item.product.id} className="flex gap-4 items-center">
@@ -389,7 +323,6 @@ export default function Checkout() {
               ))}
             </div>
 
-            {/* Calculations Breakdown */}
             <div className="space-y-4 mb-6">
               <div className="flex justify-between text-xs font-light text-muted-foreground">
                 <span>Subtotal</span>
@@ -397,34 +330,21 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between text-xs font-light text-muted-foreground">
                 <span>Shipping</span>
-                <span className="text-foreground font-medium">
-                  {shipping === 0 ? "Free" : `EGP ${shipping}`}
-                </span>
+                <span className="text-foreground font-medium">{shipping === 0 ? "Free" : `EGP ${shipping}`}</span>
               </div>
-              {shipping === 0 ? (
-                <p className="text-[9px] tracking-widest uppercase text-primary font-medium bg-primary/5 py-1 px-2.5 inline-block">
-                  Free shipping applied
-                </p>
-              ) : (
-                <p className="text-[10px] text-muted-foreground/60 font-light">
-                  Free shipping starts at EGP 1,500
-                </p>
-              )}
             </div>
 
             <div className="border-t border-border pt-4 mb-8">
               <div className="flex justify-between items-baseline">
                 <span className="text-xs font-light text-foreground">Total</span>
-                <span className="text-xl font-medium text-foreground tracking-wide">
-                  EGP {grandTotal.toLocaleString()}
-                </span>
+                <span className="text-xl font-medium text-foreground tracking-wide">EGP {grandTotal.toLocaleString()}</span>
               </div>
             </div>
 
             <button
               onClick={handlePlaceOrder}
               disabled={submitting || !selectedAddressId}
-              className="w-full bg-primary text-primary-foreground text-[10px] tracking-[0.25em] uppercase py-4 font-semibold hover:bg-primary/95 disabled:opacity-40 transition-colors shadow-md cursor-pointer flex justify-center items-center gap-2"
+              className="w-full bg-primary text-primary-foreground text-[10px] tracking-[0.25em] uppercase py-4 font-semibold hover:bg-primary/95 disabled:opacity-40 transition-colors cursor-pointer flex justify-center items-center gap-2"
             >
               {submitting ? (
                 <span className="w-4 h-4 border-2 border-background border-t-transparent rounded-full animate-spin" />
@@ -435,11 +355,10 @@ export default function Checkout() {
 
             <button
               onClick={() => navigate("/cart")}
-              className="w-full text-center text-[9px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors mt-4 block"
+              className="w-full text-center text-[9px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors mt-4 block cursor-pointer"
             >
               Modify Shopping Bag
             </button>
-
           </div>
         </div>
 

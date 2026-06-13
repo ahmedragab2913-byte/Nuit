@@ -25,7 +25,7 @@ export default function Nav() {
     { name: "Home", path: "/" },
     { name: "All Products", path: "/shop" },
     { name: "New Arrivals", path: "/new-arrivals" },
-    { name: "Offers", path: "/sales" },
+    { name: "Offers", path: "/offers" },
     { name: "Best Sellers", path: "/best-sellers" },
     { name: "Men's Perfumes", path: "/shop?category=Men%20Perfumes" },
   ];

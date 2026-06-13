@@ -218,14 +218,17 @@ class OrderController extends Controller
             });
 
             return response()->json([
-                'status' => 'success',
-                'data'   => [
-                    'order_id'     => $order->id,
-                    'order_number' => $order->order_number,
-                    'grand_total'  => $order->grand_total,
-                ],
-            ], 201);
-
+    'status' => 'success',
+    'data'   => [
+        'order_id'          => $order->id,
+        'order_number'      => $order->order_number,
+        'grand_total'       => $order->grand_total,
+        'customer_name'     => $user->name,
+        'items'             => $order->items,
+        'shipping_address'  => $order->shipping_address,
+        'estimated_days'    => '3-5',
+    ],
+], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',

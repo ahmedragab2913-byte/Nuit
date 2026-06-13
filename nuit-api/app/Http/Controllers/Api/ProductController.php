@@ -223,4 +223,27 @@ public function getStorefrontProducts(Request $request)
     // الـ paginate تلقائياً بترجع current_page و last_page و data
     return response()->json($products);
 }
+public function getBestSellers(Request $request): JsonResponse
+{
+    // تحديد عدد المنتجات في كل صفحة (الافتراضي 8)
+    $perPage = $request->query('per_page', 8);
+
+    // ⚡ Query طيران: ترتيب تنازلي بناءً على عمود الـ sales اللي عندك
+    $products = Product::query()
+        ->orderByDesc('sales') 
+        ->orderByDesc('id') // ترتيب إضافي بالـ ID لضمان ثبات النتيجة
+        ->paginate($perPage);
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $products->items(), // المنتجات الخاصة بالصفحة الحالية
+        'pagination' => [
+            'current_page' => $products->currentPage(),
+            'last_page'    => $products->lastPage(),
+            'per_page'     => $products->perPage(),
+            'total'        => $products->total(),
+            'has_more'     => $products->hasMorePages(),
+        ]
+    ]);
+}
 }

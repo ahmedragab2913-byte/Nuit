@@ -12,9 +12,12 @@ import AnnouncementBar from "./components/AnnouncementBar";
 import Footer from "./components/Footer";
 import NotFound from "./pages/NotFound";
 import NewArrivals from "./pages/NewArrivals";
+import BestSellers from "./pages/BestSellersPage"; // 🎯 1. استدعاء الصفحة الجديدة هنا
 import Login from "./pages/Login";
 import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
+import Offers from "./pages/Offers"; // تأكد من استدعاء صفحة العروض الجديدة
+import OrderConfirmation from "./pages/OrderConfirmation";
 
 // 🔐 1. واقي المسارات المحمية للزبائن (체크 التوكن)
 function ProtectedRoute() {
@@ -64,6 +67,12 @@ function App() {
         <Route path="/privacy-policy" element={<StorefrontLayout><PrivacyPolicy /></StorefrontLayout>} />
         <Route path="/terms-conditions" element={<StorefrontLayout><TermsConditions /></StorefrontLayout>} />
         <Route path="/new-arrivals" element={<StorefrontLayout><NewArrivals /></StorefrontLayout>} />
+        <Route path="/offers" element={<StorefrontLayout><Offers /></StorefrontLayout>} />
+        <Route path="/order-confirmation" element={<StorefrontLayout><OrderConfirmation /></StorefrontLayout>} />
+
+        {/* 🎯 2. الـ Route السحري اللي هيشغل صفحة الأكثر مبيعاً ويقضي على الـ 404 */}
+        <Route path="/best-sellers" element={<StorefrontLayout><BestSellers /></StorefrontLayout>} />
+        
         <Route path="/login" element={<StorefrontLayout><Login /></StorefrontLayout>} />
 
         {/* 🔒 المسارات المحمية (لازم يكون مسجل دخول ومعاه توكن) */}

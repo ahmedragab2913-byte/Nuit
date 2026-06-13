@@ -42,8 +42,7 @@ export const useCartStore = create<CartStoreState>()(
         } finally {
           set({ loading: false });
         }
-      }
-      ,
+      },
 
       addToCart: (product, quantity = 1) => {
         set((state) => {
@@ -101,17 +100,23 @@ export const useCartStore = create<CartStoreState>()(
       },
 
       syncWithDB: async () => {
-        // Sync local storage cart with database if user is authenticated
         try {
           const hasCheckedAuth = (await import("./authStore")).useAuthStore.getState().isAuthenticated;
           if (!hasCheckedAuth) return;
 
-          const itemsPayload = get().cart.map((item) => ({
+          // 1. بناء الـ Array الخاصة بالمنتجات
+          const mappedItems = get().cart.map((item) => ({
             product_id: item.product.id,
             quantity: item.quantity,
           }));
 
-          await syncDBCart(itemsPayload);
+          // 2. تغليف الـ Array داخل الـ Object المطلوب من الباك إيند بالملي
+          const payload = {
+            items: mappedItems
+          };
+
+          // 3. إرسال الـ Payload المتغلف
+          await syncDBCart(payload);
         } catch (err) {
           console.error("Cart sync with DB failed:", err);
         }

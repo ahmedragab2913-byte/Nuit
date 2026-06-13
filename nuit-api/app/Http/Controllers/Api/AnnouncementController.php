@@ -13,9 +13,15 @@ class AnnouncementController extends Controller
      */
     public function active()
     {
-        return response()->json(
-            Announcement::active()->get(['id', 'text'])
-        );
+        // جلب الإعلانات النشطة مع الألوان والترتيب، وتضمين is_active لتأمين الفرونت إند
+        $announcements = Announcement::active()
+            ->orderByDesc('priority')
+            ->get(['id', 'text', 'is_active', 'background_color', 'text_color']);
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $announcements
+        ], 200);
     }
 
     /**
@@ -23,9 +29,10 @@ class AnnouncementController extends Controller
      */
     public function index()
     {
-        return response()->json(
-            Announcement::orderByDesc('priority')->get()
-        );
+        return response()->json([
+            'status' => 'success',
+            'data'   => Announcement::orderByDesc('priority')->get()
+        ], 200);
     }
 
     /**
@@ -34,14 +41,19 @@ class AnnouncementController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'text'      => 'required|string|max:500',
-            'is_active' => 'boolean',
-            'priority'  => 'integer',
+            'text'             => 'required|string|max:500',
+            'is_active'        => 'boolean',
+            'priority'         => 'integer',
+            'background_color' => 'sometimes|string|max:7',
+            'text_color'       => 'sometimes|string|max:7',
         ]);
 
         $announcement = Announcement::create($data);
 
-        return response()->json($announcement, 201);
+        return response()->json([
+            'status' => 'success',
+            'data'   => $announcement
+        ], 201);
     }
 
     /**
@@ -50,14 +62,19 @@ class AnnouncementController extends Controller
     public function update(Request $request, Announcement $announcement)
     {
         $data = $request->validate([
-            'text'      => 'sometimes|required|string|max:500',
-            'is_active' => 'boolean',
-            'priority'  => 'integer',
+            'text'             => 'sometimes|required|string|max:500',
+            'is_active'        => 'boolean',
+            'priority'         => 'integer',
+            'background_color' => 'sometimes|string|max:7',
+            'text_color'       => 'sometimes|string|max:7',
         ]);
 
         $announcement->update($data);
 
-        return response()->json($announcement);
+        return response()->json([
+            'status' => 'success',
+            'data'   => $announcement
+        ], 200);
     }
 
     /**
@@ -67,6 +84,9 @@ class AnnouncementController extends Controller
     {
         $announcement->delete();
 
-        return response()->json(null, 204);
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Announcement deleted successfully'
+        ], 200); // تغيير لـ 200 مع رسالة نجاح واضحة بدلاً من 204 الفاضية لتسهيل الـ Debugging
     }
 }

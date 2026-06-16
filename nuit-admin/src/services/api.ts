@@ -206,3 +206,77 @@ export const deleteAnnouncement = async (id: number) => {
   const res = await api.delete(`/announcements/${id}`);
   return res.data;
 };
+// ─── SHIPPING RATES SERVICE ────────────────────────────────
+export interface ShippingRate {
+  id: number;
+  city_name: string;
+  rate: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const getAdminShippingRates = async (): Promise<ShippingRate[]> => {
+  const res = await api.get("/shipping-rates");
+  return res.data?.data || res.data || [];
+};
+
+/**
+ * 3. إضافة محافظة جديدة (لوحة تحكم الأدمن)
+ */
+export const createShippingRate = async (data: { city_name: string; rate: number }) => {
+  const res = await api.post("/shipping-rates", data);
+  return res.data;
+};
+
+/**
+ * 4. تعديل سعر شحن محافظة (لوحة تحكم الأدمن)
+ */
+export const updateShippingRate = async (id: number, data: { rate: number }) => {
+  const res = await api.put(`/shipping-rates/${id}`, data);
+  return res.data;
+};
+
+/**
+ * 5. حذف محافظة (لوحة تحكم الأدمن)
+ */
+export const deleteShippingRate = async (id: number) => {
+  const res = await api.delete(`/shipping-rates/${id}`);
+  return res.data;
+};
+// ─── PROMO CODES SERVICE ───────────────────────────────────
+export interface PromoCode {
+  id: number;
+  code: string;
+  type: "percentage" | "fixed";
+  value: number;
+  min_order_amount: number;
+  max_discount_amount: number | null;
+  usage_limit: number | null;
+  user_usage_limit: number;
+  used_count: number;
+  expires_at: string | null;
+  is_active: boolean;
+}
+
+export const getPromoCodes = async (): Promise<PromoCode[]> => {
+  const res = await api.get("/admin/promo-codes");
+  const data = res.data;
+  return Array.isArray(data) ? data : data.data ?? [];
+};
+
+export const createPromoCode = async (data: Record<string, any>) => {
+  const res = await api.post("/admin/promo-codes", data);
+  return res.data;
+};
+
+export const togglePromoCodeStatus = async (id: number, currentStatus: boolean) => {
+  const res = await api.patch(`/admin/promo-codes/${id}/toggle`, {
+    is_active: !currentStatus
+  });
+  return res.data;
+};
+
+export const deletePromoCode = async (id: number) => {
+  const res = await api.delete(`/admin/promo-codes/${id}`);
+  return res.data;
+};

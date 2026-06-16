@@ -1,12 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useCartStore } from "../store/cartStore";
-import { placeOrder } from "../services/api";
+// استيراد دالة جلب أسعار الشحن العامة النظيفة من ملف الـ api
+import { placeOrder, getShippingRatesPublic, validatePromoCode } from "../services/api";
 import { Check, MapPin, Plus, AlertCircle } from "lucide-react";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
 const sans  = { fontFamily: "'Raleway', sans-serif" };
+
+interface ShippingRate {
+  id: number;
+  city_name: string;
+  rate: number;
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -18,22 +25,45 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 🚚 أسعار الشحن - تعيين القيمة الابتدائية لـ Cost بـ null بدل 50
+  const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
+  const [dynamicShippingCost, setDynamicShippingCost] = useState<number | null>(null);
+
   // Address form state
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [country] = useState("egypt");
+  const COUNTRY = "egypt";
   const [city, setCity] = useState("");
   const [street, setStreet] = useState("");
   const [building, setBuilding] = useState("");
   const [floor, setFloor] = useState("");
   const [apartment, setApartment] = useState("");
+  const [showAddressForm, setShowAddressForm] = useState(false);
   const [savingAddress, setSavingAddress] = useState(false);
 
-  // 1. Guard Protection
+  // 🎫 Promo Code State
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount_amount: number } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [validatingPromo, setValidatingPromo] = useState(false);
+
+  // Ref to suppress empty-cart redirect during order placement
+  const orderInFlightRef = useRef(false);
+
+  // 1. Guard Protection & Fetch Shipping Rates
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login?redirect=/checkout", { replace: true });
     } else {
       fetchAddresses();
+      
+      // Shipping rates — getShippingRatesPublic already returns ShippingRate[]
+      getShippingRatesPublic()
+        .then(data => {
+          setShippingRates(Array.isArray(data) ? data : []);
+        })
+        .catch(err => {
+          console.error("Error fetching shipping rates", err);
+          setShippingRates([]);
+        });
     }
   }, [isAuthenticated, navigate, fetchAddresses]);
 
@@ -47,16 +77,75 @@ export default function Checkout() {
     }
   }, [addresses]);
 
-  // 3. Redirect if cart is empty (تم تأمينه لمنع التداخل أثناء الـ submission الناجح)
+  // 🔄 3. مراقبة العنوان المختار أو الـ Form المفتوح لحساب الشحن ديناميكياً بدون قيم افتراضية وهمية
   useEffect(() => {
-    if (cart.length === 0 && !submitting) {
+    if (!Array.isArray(shippingRates)) return;
+
+    // الحالة أ: العميل فاتح فورم إضافة عنوان جديد وبيختار مدينة حالياً
+    if (showAddressForm && city) {
+      const matchedRate = shippingRates.find(r => r.city_name.toLowerCase() === city.toLowerCase());
+      setDynamicShippingCost(matchedRate ? matchedRate.rate : null);
+      return;
+    }
+
+    // الحالة ب: العميل بيختار من عناوينه المحفوظة فوق
+    if (selectedAddressId && addresses.length > 0) {
+      const currentAddress = addresses.find(a => a.id === selectedAddressId);
+      if (currentAddress && currentAddress.city) {
+        const matchedRate = shippingRates.find(r => r.city_name.toLowerCase() === currentAddress.city.toLowerCase());
+        setDynamicShippingCost(matchedRate ? matchedRate.rate : null);
+      } else {
+        setDynamicShippingCost(null);
+      }
+    } else {
+      setDynamicShippingCost(null);
+    }
+  }, [selectedAddressId, addresses, city, showAddressForm, shippingRates]);
+
+  // 4. Redirect if cart is empty (but NOT during order submission)
+  useEffect(() => {
+    if (cart.length === 0 && !submitting && !orderInFlightRef.current) {
       navigate("/cart");
     }
   }, [cart, navigate, submitting]);
 
+  // 🎫 Promo Code Handlers
+  const handleApplyPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promoCode.trim()) return;
+    try {
+      setValidatingPromo(true);
+      setPromoError(null);
+      const res = await validatePromoCode(promoCode.trim(), cartTotal);
+      if (res.status === "success" && res.data) {
+        setAppliedPromo({
+          code: res.data.code,
+          discount_amount: res.data.discount_amount,
+        });
+        setPromoCode("");
+      } else {
+        setPromoError(res.message || "Failed to apply promo code.");
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || "Failed to validate promo code.";
+      setPromoError(msg);
+    } finally {
+      setValidatingPromo(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoError(null);
+  };
+
+  // 🧮 الحسابات المالية بعد تعديل الحساب الديناميكي وإلغاء الـ Free Shipping
   const cartTotal = cart.reduce((s, i) => s + i.product.price * i.quantity, 0);
-  const shipping  = cartTotal >= 1500 ? 0 : 50;
-  const grandTotal = cartTotal + shipping;
+  
+  // الشحن يعتمد بالكامل على القيمة القادمة من الداتا أو صفر لو لسه لم يتم الاختيار (لمنع ضرب الـ Total)
+  const shipping   = dynamicShippingCost !== null ? dynamicShippingCost : 0;
+  const discount   = appliedPromo ? appliedPromo.discount_amount : 0;
+  const grandTotal = Math.max(0, cartTotal + shipping - discount);
 
   const handleAddAddress = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +154,7 @@ export default function Checkout() {
       setSavingAddress(true);
       setError(null);
       const success = await addAddress({
-        country,
+        country: COUNTRY,
         city,
         street,
         building,
@@ -90,8 +179,8 @@ export default function Checkout() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedAddressId) {
-      setError("Please select a delivery address.");
+    if (!selectedAddressId || dynamicShippingCost === null) {
+      setError("Please select a valid delivery address to calculate shipping.");
       return;
     }
 
@@ -99,9 +188,9 @@ export default function Checkout() {
 
     try {
       setSubmitting(true);
+      orderInFlightRef.current = true;
       setError(null);
 
-      // بناء الـ items المظبوط حسب الـ Validation في الـ Controller
       const itemsPayload = cart.map(i => ({
         product_id: i.product.id,
         quantity: i.quantity,
@@ -111,34 +200,30 @@ export default function Checkout() {
         address_id: selectedAddressId,
         payment_method: paymentMethod,
         items: itemsPayload,
+        promo_code: appliedPromo ? appliedPromo.code : undefined,
       });
 
-      // التحقق بناءً على الـ Response الراجع من الـ OrderController الخاص بك
       if (res.status === "success" && res.data) {
         isSuccess = true;
 
-        // ✅ الخطوة 1: انقل اليوزر فوراً لصفحة التأكيد وباصي الـ order data
-        navigate("/order-confirmation", { 
-          state: { 
-            order: res.data 
-          } 
-        });
+        // Clear cart BEFORE navigating — orderInFlightRef prevents the redirect
+        clearCart();
 
-        // ✅ الخطوة 2: فضي السلة بعد الـ navigation عشان الـ Guard useEffect الحارس م يلحقش يشتغل ويحول لـ /cart
-        setTimeout(() => {
-          clearCart();
-        }, 100);
+        navigate("/order-confirmation", { 
+          state: { order: res.data } 
+        });
       } else {
         setError(res.message || "Failed to place order.");
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Checkout failed:", err);
-      setError(err.response?.data?.message || err.message || "Checkout failed. Please try again.");
+      const message = err instanceof Error ? err.message : "Checkout failed. Please try again.";
+      setError(message);
     } finally {
-      // تأمين: سيب الـ submitting بـ true لو العملية نجحت عشان الـ Guard ميعملش ريفريش مفاجئ
       if (!isSuccess) {
         setSubmitting(false);
+        orderInFlightRef.current = false;
       }
     }
   };
@@ -200,7 +285,7 @@ export default function Checkout() {
                     >
                       <MapPin size={14} className="text-muted-foreground mb-3" />
                       <p className="text-xs text-foreground font-semibold mb-1">
-                        {country.toUpperCase()}, {addr.city}
+                        {COUNTRY.toUpperCase()}, {addr.city}
                       </p>
                       <p className="text-[11px] text-muted-foreground/80 leading-relaxed font-light mb-1">
                         {addr.street}, Building {addr.building}
@@ -244,11 +329,23 @@ export default function Checkout() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[9px] uppercase text-muted-foreground/80 mb-1">Country</label>
-                    <input type="text" disabled value={country} className="w-full bg-background border border-border/50 px-3 py-2 text-xs text-muted-foreground outline-none cursor-not-allowed uppercase" />
+                    <input type="text" disabled value={COUNTRY} className="w-full bg-background border border-border/50 px-3 py-2 text-xs text-muted-foreground outline-none cursor-not-allowed uppercase" />
                   </div>
                   <div>
                     <label className="block text-[9px] uppercase text-muted-foreground/80 mb-1">City *</label>
-                    <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} placeholder="Cairo / Giza" className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary" />
+                    <select
+                      required
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>Select your city</option>
+                      {Array.isArray(shippingRates) && shippingRates.map((rate) => (
+                        <option key={rate.id} value={rate.city_name}>
+                          {rate.city_name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div>
@@ -323,14 +420,64 @@ export default function Checkout() {
               ))}
             </div>
 
+            {/* Promo Code Input / Display */}
+            <div className="mb-6 pb-6 border-b border-border/40">
+              {appliedPromo ? (
+                <div className="flex items-center justify-between bg-emerald-500/5 border border-emerald-500/20 px-3 py-2.5 rounded-sm text-xs text-emerald-400">
+                  <span className="font-medium tracking-wide">Code applied: {appliedPromo.code}</span>
+                  <button 
+                    type="button" 
+                    onClick={handleRemovePromo}
+                    className="text-[10px] underline uppercase tracking-wider hover:text-emerald-300 cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleApplyPromo} className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="PROMO CODE"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      className="flex-1 bg-background border border-border px-3 py-2 text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/45 placeholder:text-[10px] placeholder:tracking-wider uppercase"
+                    />
+                    <button
+                      type="submit"
+                      disabled={validatingPromo || !promoCode.trim()}
+                      className="border border-foreground bg-foreground text-background px-4 text-[10px] tracking-widest uppercase hover:bg-transparent hover:text-foreground transition-all disabled:opacity-40 cursor-pointer font-medium"
+                    >
+                      {validatingPromo ? "..." : "Apply"}
+                    </button>
+                  </div>
+                  {promoError && <p className="text-[10px] text-red-400 font-light mt-1">{promoError}</p>}
+                </form>
+              )}
+            </div>
+
             <div className="space-y-4 mb-6">
               <div className="flex justify-between text-xs font-light text-muted-foreground">
                 <span>Subtotal</span>
                 <span className="text-foreground font-medium">EGP {cartTotal.toLocaleString()}</span>
               </div>
+              {appliedPromo && (
+                <div className="flex justify-between text-xs font-light text-emerald-400">
+                  <span>Discount</span>
+                  <span>- EGP {discount.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between text-xs font-light text-muted-foreground">
                 <span>Shipping</span>
-                <span className="text-foreground font-medium">{shipping === 0 ? "Free" : `EGP ${shipping}`}</span>
+                <span className="text-foreground font-medium">
+                  {dynamicShippingCost !== null ? (
+                    `EGP ${dynamicShippingCost}`
+                  ) : (
+                    <span className="text-amber-500/90 text-[10px] tracking-wider font-normal normal-case">
+                      Select address to calculate
+                    </span>
+                  )}
+                </span>
               </div>
             </div>
 
@@ -343,7 +490,7 @@ export default function Checkout() {
 
             <button
               onClick={handlePlaceOrder}
-              disabled={submitting || !selectedAddressId}
+              disabled={submitting || !selectedAddressId || dynamicShippingCost === null}
               className="w-full bg-primary text-primary-foreground text-[10px] tracking-[0.25em] uppercase py-4 font-semibold hover:bg-primary/95 disabled:opacity-40 transition-colors cursor-pointer flex justify-center items-center gap-2"
             >
               {submitting ? (

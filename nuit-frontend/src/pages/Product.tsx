@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Heart, Minus, Plus, Link2, Check } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
-
+import { getProductById } from "../services/api";
+import type { Product as ProductType } from "../types";
 const serif = { fontFamily: "'Playfair Display', serif" };
 const sans  = { fontFamily: "'Raleway', sans-serif" };
 
@@ -12,18 +13,28 @@ export default function Product() {
   const [qty, setQty] = useState(1);
   const [copied, setCopied] = useState(false);
   const [added, setAdded] = useState(false);
-  const { products, loading, error, wishlisted, fetchProducts, addToCart, toggleWish } = useCartStore();
+  const { products, wishlisted, fetchProducts, addToCart, toggleWish } = useCartStore();
+  const [product, setProduct] = useState<ProductType | null>(null);
+const [pageLoading, setPageLoading] = useState(true);
+const [pageError, setPageError] = useState<string | null>(null);
+
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+  setPageLoading(true);
+  setPageError(null);
+  getProductById(Number(id))
+    .then(setProduct)
+    .catch(() => setPageError("Fragrance not found."))
+    .finally(() => setPageLoading(false));
+}, [id]);
 
-  const product = products.find((p) => p.id === Number(id));
+useEffect(() => {
+  fetchProducts(); // still needed for related products
+}, [fetchProducts]);
 
-  // Reset quantity when ID changes
-  useEffect(() => {
-    setQty(1);
-  }, [id]);
+useEffect(() => {
+  setQty(1);
+}, [id]);
 
   // دالة نسخ رابط المنتج الحالي
   const handleCopyLink = async () => {
@@ -36,7 +47,7 @@ export default function Product() {
     }
   };
 
-  if (loading) {
+  if (pageLoading) {
     return (
       <div className="pt-32 px-8 lg:px-20 min-h-screen flex items-center justify-center" style={serif}>
         <div className="animate-pulse flex flex-col items-center gap-4 w-full max-w-lg">
@@ -48,11 +59,11 @@ export default function Product() {
     );
   }
 
-  if (error || !product) {
+  if (pageError  || !product) {
     return (
       <div className="pt-32 px-8 lg:px-20 min-h-screen flex flex-col items-center justify-center text-center" style={serif}>
         <p className="text-muted-foreground text-sm font-light mb-6">
-          {error || "Fragrance not found."}
+          {pageError || "Fragrance not found."}
         </p>
         <button
           onClick={() => navigate("/shop")}
@@ -130,7 +141,7 @@ export default function Product() {
             {product.description}
           </p>
 
-          {/* Fragrance Pyramid */}
+          {/* Fragrance Pyramid
           <div className="mb-10">
             <p className="text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-4">Fragrance Pyramid</p>
             <div className="space-y-2">
@@ -147,7 +158,7 @@ export default function Product() {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
 
           <div className="border-t border-border pt-8 mb-6">
             <div className="flex items-baseline justify-between mb-6">

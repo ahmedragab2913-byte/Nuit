@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { Search, Bell, ChevronDown } from "lucide-react";
+import { Search, Bell, ChevronDown} from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 
 export default function Topbar() {
@@ -11,6 +11,9 @@ export default function Topbar() {
     if (path.includes("/dashboard/products")) return "Products";
     if (path.includes("/dashboard/orders")) return "Orders";
     if (path.includes("/dashboard/customers")) return "Customers";
+    if (path.includes("/dashboard/announcements")) return "Announcements"; // 💡 أضفنا هيدر الإعلانات
+    if (path.includes("/dashboard/shipping-rates")) return "Shipping Rates"; // 💡 أضفنا هيدر أسعار الشحن
+    if (path.includes("/dashboard/promo-codes")) return "Promo Codes"; // 💡 أضفنا هيدر أكواد الخصم
     return "Overview";
   };
 

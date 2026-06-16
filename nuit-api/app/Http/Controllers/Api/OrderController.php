@@ -87,11 +87,12 @@ class OrderController extends Controller
         $user = $request->user();
 
         $request->validate([
-            'address_id'     => 'required|exists:addresses,id,deleted_at,NULL',
-            'payment_method' => 'required|in:cash_on_delivery,card,paypal,stripe',
-            'items'          => 'required|array|min:1',
+            'address_id'         => 'required|exists:addresses,id,deleted_at,NULL',
+            'payment_method'     => 'required|in:cash_on_delivery,card,paypal,stripe',
+            'items'              => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity'   => 'required|integer|min:1',
+            'promo_code'         => 'nullable|string',
         ]);
 
         $addressId = $request->input('address_id');
@@ -109,7 +110,7 @@ class OrderController extends Controller
 
         // Run entire checkout within a DB Transaction with Lock to prevent race conditions
         try {
-            $order = DB::transaction(function () use ($user, $address, $paymentMethod, $requestedItems) {
+            $order = DB::transaction(function () use ($user, $address, $paymentMethod, $requestedItems, $request) {
                 $subtotal = 0.00;
                 $itemsSnapshot = [];
                 $orderItemsToCreate = [];
@@ -159,7 +160,64 @@ class OrderController extends Controller
 
                 // Check shipping rules: Subtotal >= 1500 EGP gets free shipping, else 50 EGP
                 $shippingCost = $subtotal >= 1500 ? 0.00 : 50.00;
-                $grandTotal = $subtotal + $shippingCost;
+
+                // 🎫 Promo Code Discount logic
+                $discountAmount = 0.00;
+                $promoCodeId = null;
+
+                if ($request->filled('promo_code')) {
+                    $promo = \App\Models\PromoCode::where('code', $request->input('promo_code'))
+                        ->where('is_active', true)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$promo) {
+                        throw new \Exception("Invalid or inactive promo code.");
+                    }
+
+                    if ($promo->expires_at && $promo->expires_at->isPast()) {
+                        throw new \Exception("This promo code has expired.");
+                    }
+
+                    if ($promo->usage_limit !== null && $promo->used_count >= $promo->usage_limit) {
+                        throw new \Exception("This promo code has reached its usage limit.");
+                    }
+
+                    if ($subtotal < $promo->min_order_amount) {
+                        throw new \Exception("Minimum order amount of EGP " . number_format($promo->min_order_amount, 2) . " not met for this promo code.");
+                    }
+
+                    // Count usage by user
+                    $userUsageCount = Order::where('user_id', $user->id)
+                        ->where('promo_code_id', $promo->id)
+                        ->count();
+
+                    if ($userUsageCount >= $promo->user_usage_limit) {
+                        throw new \Exception("You have reached the usage limit for this promo code.");
+                    }
+
+                    // Calculate discount
+                    if ($promo->type === 'percentage') {
+                        $discountAmount = ($promo->value / 100) * $subtotal;
+                        if ($promo->max_discount_amount && $discountAmount > $promo->max_discount_amount) {
+                            $discountAmount = (float) $promo->max_discount_amount;
+                        }
+                    } else {
+                        $discountAmount = (float) $promo->value;
+                    }
+
+                    if ($discountAmount > $subtotal) {
+                        $discountAmount = $subtotal;
+                    }
+
+                    $promoCodeId = $promo->id;
+                    $promo->increment('used_count');
+                }
+
+                $grandTotal = $subtotal + $shippingCost - $discountAmount;
+                if ($grandTotal < 0) {
+                    $grandTotal = 0.00;
+                }
 
                 // Sync or create client as Customer record in DB if not exists
                 $customer = Customer::where('email', $user->email)->first();
@@ -190,10 +248,11 @@ class OrderController extends Controller
                     'order_number'     => $orderNumber,
                     'customer_id'      => $customer->id,
                     'user_id'          => $user->id,
+                    'promo_code_id'    => $promoCodeId,
                     'total'            => $grandTotal, // backward compatibility
                     'subtotal'         => $subtotal,
                     'shipping_cost'    => $shippingCost,
-                    'discount_amount'  => 0.00,
+                    'discount_amount'  => $discountAmount,
                     'grand_total'      => $grandTotal,
                     'status'           => 'pending',
                     'payment_method'   => $paymentMethod,
@@ -218,17 +277,21 @@ class OrderController extends Controller
             });
 
             return response()->json([
-    'status' => 'success',
-    'data'   => [
-        'order_id'          => $order->id,
-        'order_number'      => $order->order_number,
-        'grand_total'       => $order->grand_total,
-        'customer_name'     => $user->name,
-        'items'             => $order->items,
-        'shipping_address'  => $order->shipping_address,
-        'estimated_days'    => '3-5',
-    ],
-], 201);
+                'status' => 'success',
+                'data'   => [
+                    'order_id'          => $order->id,
+                    'order_number'      => $order->order_number,
+                    'subtotal'          => $order->subtotal,
+                    'shipping_cost'     => $order->shipping_cost,
+                    'discount_amount'   => $order->discount_amount,
+                    'promo_code'        => $order->promoCode ? $order->promoCode->code : null,
+                    'grand_total'       => $order->grand_total,
+                    'customer_name'     => $user->name,
+                    'items'             => $order->items,
+                    'shipping_address'  => $order->shipping_address,
+                    'estimated_days'    => '3-5',
+                ],
+            ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',

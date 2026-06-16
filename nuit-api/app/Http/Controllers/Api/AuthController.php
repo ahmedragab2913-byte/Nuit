@@ -75,6 +75,9 @@ class AuthController extends Controller
                 'role'     => 'customer',
             ]);
 
+            // 🛒 Eagerly create the cart for the user
+            Cart::firstOrCreate(['user_id' => $user->id]);
+
             // 🔑 توليد التوكن فوراً بعد التسجيل
             $token = $user->createToken('auth_token')->plainTextToken;
 

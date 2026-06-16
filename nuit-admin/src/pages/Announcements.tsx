@@ -95,9 +95,7 @@ export default function Announcements() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Megaphone size={18} className="text-white/40" />
-          <h2 className="text-sm uppercase tracking-wider text-white/70" style={serif}>
-            Announcements
-          </h2>
+          
         </div>
         <button
           onClick={handleOpenAdd}

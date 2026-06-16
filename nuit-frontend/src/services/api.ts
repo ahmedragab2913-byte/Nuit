@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { Product } from "../types";
+import { useAuthStore } from "../store/authStore";
 
 // 1. بنحدد الرابط الأساسي للسيرفر مرة واحدة ونؤمنه
 const BASE_URL = import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.startsWith('http')
@@ -27,7 +28,7 @@ api.interceptors.request.use((config) => {
   return config;
 }, (error) => Promise.reject(error));
 
-// Global unauthorized listener
+// Global 401 interceptor — calls setUnauthenticated directly (no custom events)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -35,24 +36,19 @@ api.interceptors.response.use(
       if (typeof window !== "undefined") {
         localStorage.removeItem("nuit_auth_token");
       }
-      window.dispatchEvent(new Event("client-unauthorized"));
+      useAuthStore.getState().setUnauthenticated();
     }
     return Promise.reject(error);
   }
 );
 
-export const getCsrfCookie = async () => {
-  // Retained as a dummy function to avoid build breaking changes on imports
-  return Promise.resolve();
-};
-
 // ─── AUTHENTICATION SERVICES ──────────────────────────────────
-export const apiRegister = async (data: Record<string, any>) => {
+export const apiRegister = async (data: Record<string, unknown>) => {
   const res = await api.post("/register", data);
   return res.data;
 };
 
-export const apiLogin = async (data: Record<string, any>) => {
+export const apiLogin = async (data: Record<string, unknown>) => {
   const res = await api.post("/login", data);
   return res.data;
 };
@@ -100,6 +96,7 @@ export const getProductswithPagination = async (
   if (category && category !== "All") {
     params.append("category", category);
   }
+  
 
   const res = await api.get(`/products?${params}`);
   const raw = res.data;
@@ -118,6 +115,14 @@ export const getProductswithPagination = async (
     current_page: raw.current_page ?? 1,
     last_page:    raw.last_page    ?? 1,
     total:        raw.total        ?? list.length,
+  };
+};
+export const getProductById = async (id: number): Promise<Product> => {
+  const res = await api.get(`/products/${id}`);
+  const p = res.data.data ?? res.data;
+  return {
+    ...p,
+    notes: Array.isArray(p.notes) ? p.notes : (typeof p.notes === "string" ? JSON.parse(p.notes) : [])
   };
 };
 
@@ -160,6 +165,23 @@ export const getBestSellers = async (
 export const getCategories = async (): Promise<string[]> => {
   const res = await api.get("/products/categories");
   return res.data ?? [];
+};
+// ─── SHIPPING RATES SERVICES (ADMIN & PUBLIC) ─────────────────
+
+// الـ Interface الخاص ببيانات الشحن
+export interface ShippingRate {
+  id: number;
+  city_name: string;
+  rate: number;
+}
+
+/**
+ * 1. جلب أسعار الشحن العامة (تستخدم في صفحة الـ Checkout برة)
+ */
+export const getShippingRatesPublic = async (): Promise<ShippingRate[]> => {
+  const res = await api.get("/shipping-rates");
+  // تأمين استخراج المصفوفة أياً كان شكل الـ return (لافف جوه data أو مصفوفة صريحة)
+  return res.data?.data || res.data || [];
 };
 
 // ─── ADDRESS MANAGEMENT ───────────────────────────────────────
@@ -216,10 +238,16 @@ export interface CheckoutPayload {
   address_id: number;
   payment_method: string;
   items: { product_id: number; quantity: number }[];
+  promo_code?: string;
 }
 
 export const placeOrder = async (payload: CheckoutPayload) => {
   const res = await api.post("/checkout", payload);
+  return res.data;
+};
+
+export const validatePromoCode = async (code: string, subtotal: number) => {
+  const res = await api.post("/promo-codes/validate", { code, subtotal });
   return res.data;
 };
 

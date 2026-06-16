@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Definitions for Gradients and Styles -->
+  <defs>
+    <!-- Premium Liquid Gold Gradient -->
+    <linearGradient id="liquidGold" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C5A059" />
+      <stop offset="50%" stop-color="#E5C483" />
+      <stop offset="100%" stop-color="#B38B46" />
+    </linearGradient>
+    
+    <!-- Sophisticated Serif Typography Style -->
+    <style>
+      .brand-text {
+        font-family: 'Playfair Display', 'Didot', 'Bodoni MT', 'Georgia', serif;
+        font-size: 56px;
+        fill: #FFFFFF;
+        letter-spacing: 0.35em;
+        text-anchor: middle;
+        font-weight: 300;
+      }
+      .sub-text {
+        font-family: 'Montserrat', 'Helvetica Neue', sans-serif;
+        font-size: 14px;
+        fill: #C5A059;
+        letter-spacing: 0.6em;
+        text-anchor: middle;
+        font-weight: 400;
+      }
+    </style>
+  </defs>
+
+  <!-- Deep Midnight Luxury Background (Optional, remove if you want transparent) -->
+  <rect width="100%" height="100%" fill="#0B0C10" rx="24"/>
+
+  <!-- Brand Mark: The Cosmic Droplet -->
+  <g transform="translate(0, -20)">
+    <!-- Main Perfume Droplet Shape -->
+    <path d="M256,90 C256,90 166,200 166,280 C166,330 206,370 256,370 C306,370 346,330 346,280 C346,200 256,90 256,90 Z" 
+          fill="url(#liquidGold)" />
+          
+    <!-- Negative Space Crescent Moon Cutout -->
+    <path d="M250,210 C210,210 190,245 190,285 C190,320 215,345 250,345 C230,335 220,310 220,285 C220,255 235,225 250,210 Z" 
+          fill="#0B0C10" />
+  </g>
+
+  <!-- Typography -->
+  <!-- "N U I T" Wordmark -->
+  <text x="264" y="420" class="brand-text">NUIT</text>
+  
+  <!-- "PARFUMS" Secondary Label -->
+  <text x="261" y="455" class="sub-text">PARFUMS</text>
+</svg>

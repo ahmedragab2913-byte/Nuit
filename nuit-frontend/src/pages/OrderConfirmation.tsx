@@ -1,4 +1,3 @@
-import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, ShoppingBag, Calendar, MapPin, ArrowRight } from "lucide-react";
 
@@ -31,6 +30,10 @@ export default function OrderConfirmation() {
   const deliveryDays = orderData.delivery_days || orderData.estimated_days || "3-5";
   const items = orderData.items || [];
   const shippingAddress = orderData.shipping_address;
+  const subtotal = orderData.subtotal || 0;
+  const shippingCost = orderData.shipping_cost || 0;
+  const discountAmount = orderData.discount_amount || 0;
+  const promoCode = orderData.promo_code || null;
 
   // دالة ذكية لمعالجة وعرض العنوان بأي شكل يرجع به من الباك إيند
   const renderShippingAddress = () => {
@@ -119,11 +122,30 @@ export default function OrderConfirmation() {
           })}
         </div>
 
-        <div className="border-t border-border pt-4 flex justify-between items-baseline">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Amount Paid</span>
-          <span className="text-xl font-medium tracking-wide text-primary">
-            EGP {Number(totalPrice).toLocaleString()}
-          </span>
+        <div className="border-t border-border pt-6 space-y-3">
+          <div className="flex justify-between text-xs font-light text-muted-foreground">
+            <span>Subtotal</span>
+            <span className="text-foreground font-medium">EGP {Number(subtotal).toLocaleString()}</span>
+          </div>
+          
+          {Number(discountAmount) > 0 && (
+            <div className="flex justify-between text-xs font-light text-emerald-400">
+              <span>Discount {promoCode ? `(${promoCode})` : ""}</span>
+              <span>- EGP {Number(discountAmount).toLocaleString()}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between text-xs font-light text-muted-foreground">
+            <span>Shipping</span>
+            <span className="text-foreground font-medium">EGP {Number(shippingCost).toLocaleString()}</span>
+          </div>
+
+          <div className="border-t border-border/40 pt-4 flex justify-between items-baseline">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Amount Paid</span>
+            <span className="text-xl font-medium tracking-wide text-primary">
+              EGP {Number(totalPrice).toLocaleString()}
+            </span>
+          </div>
         </div>
       </div>
 

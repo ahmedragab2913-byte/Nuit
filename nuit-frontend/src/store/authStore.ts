@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Address, CustomerOrder } from "../services/api";
+import { useCartStore } from "./cartStore";
 import {
   apiRegister,
   apiLogin,
@@ -13,6 +14,26 @@ import {
   setDefaultAddress,
   getMyOrders,
 } from "../services/api";
+import type { AxiosError } from "axios";
+
+// ─── Strict credential types ─────────────────────────────────
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+interface RegisterCredentials {
+  name: string;
+  email: string;
+  phone?: string;
+  password: string;
+  password_confirmation: string;
+}
+
+interface CartSyncItem {
+  product_id: number;
+  quantity: number;
+}
 
 interface UserProfile {
   id: number;
@@ -31,8 +52,8 @@ interface AuthStoreState {
   orders: CustomerOrder[];
   error: string | null;
 
-  register: (credentials: Record<string, any>, guestCartItems?: { product_id: number; quantity: number }[]) => Promise<boolean>;
-  login: (credentials: Record<string, any>, guestCartItems?: { product_id: number; quantity: number }[]) => Promise<boolean>;
+  register: (credentials: RegisterCredentials, guestCartItems?: CartSyncItem[]) => Promise<boolean>;
+  login: (credentials: LoginCredentials, guestCartItems?: CartSyncItem[]) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   updateName: (name: string) => Promise<boolean>;
@@ -44,6 +65,18 @@ interface AuthStoreState {
   fetchOrders: () => Promise<void>;
   clearError: () => void;
   setUnauthenticated: () => void;
+}
+
+/**
+ * Safely extracts an error message from an Axios error or generic Error.
+ */
+function extractErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "response" in err) {
+    const axiosErr = err as AxiosError<{ message?: string }>;
+    return axiosErr.response?.data?.message ?? axiosErr.message ?? fallback;
+  }
+  if (err instanceof Error) return err.message;
+  return fallback;
 }
 
 export const useAuthStore = create<AuthStoreState>((set, get) => ({
@@ -64,6 +97,10 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
         if (res.token) {
           localStorage.setItem("nuit_auth_token", res.token);
         }
+        
+        // Clear the local guest cart without syncing (backend already has the merged cart)
+        useCartStore.getState().clearCart(true /* skipSync */);
+
         set({
           user: res.user,
           isAuthenticated: true,
@@ -72,10 +109,9 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
         return true;
       }
       return false;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Registration failed:", err);
-      const msg = err.response?.data?.message || err.message || "Registration failed. Try again.";
-      set({ error: msg });
+      set({ error: extractErrorMessage(err, "Registration failed. Try again.") });
       return false;
     } finally {
       set({ loading: false });
@@ -91,6 +127,10 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
         if (res.token) {
           localStorage.setItem("nuit_auth_token", res.token);
         }
+
+        // Clear the local guest cart without syncing (backend already has the merged cart)
+        useCartStore.getState().clearCart(true /* skipSync */);
+
         set({
           user: res.user,
           isAuthenticated: true,
@@ -99,10 +139,9 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
         return true;
       }
       return false;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Login failed:", err);
-      const msg = err.response?.data?.message || err.message || "Invalid credentials. Try again.";
-      set({ error: msg });
+      set({ error: extractErrorMessage(err, "Invalid credentials. Try again.") });
       return false;
     } finally {
       set({ loading: false });
@@ -116,7 +155,11 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     } catch (err) {
       console.error("Logout failed:", err);
     } finally {
+      // 1. Remove the token FIRST
       localStorage.removeItem("nuit_auth_token");
+
+      // 2. Mark as unauthenticated BEFORE clearing the cart
+      //    so syncWithDB (which checks localStorage for token) won't fire
       set({
         user: null,
         isAuthenticated: false,
@@ -125,10 +168,25 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
         loading: false,
         error: null,
       });
+
+      // 3. Clear local cart with skipSync=true (token is already gone)
+      useCartStore.getState().clearCart(true /* skipSync */);
+      localStorage.removeItem("nuit-cart-storage");
     }
   },
 
   checkAuth: async () => {
+    // Don't fire if no token exists
+    const token = localStorage.getItem("nuit_auth_token");
+    if (!token) {
+      set({
+        user: null,
+        isAuthenticated: false,
+        hasCheckedAuth: true,
+      });
+      return;
+    }
+
     try {
       const res = await apiGetMe();
       if (res.status === "success" && res.user) {
@@ -231,18 +289,15 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 
-  setUnauthenticated: () => set({
-    user: null,
-    isAuthenticated: false,
-    hasCheckedAuth: true,
-    addresses: [],
-    orders: [],
-  })
+  setUnauthenticated: () => {
+    // Clear cart without syncing (session is already dead)
+    useCartStore.getState().clearCart(true /* skipSync */);
+    set({
+      user: null,
+      isAuthenticated: false,
+      hasCheckedAuth: true,
+      addresses: [],
+      orders: [],
+    });
+  }
 }));
-
-// Setup unauthorized response interceptor
-if (typeof window !== "undefined") {
-  window.addEventListener("client-unauthorized", () => {
-    useAuthStore.getState().setUnauthenticated();
-  });
-}

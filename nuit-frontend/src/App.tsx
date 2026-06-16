@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import ScrollToTop from "./components/ScrollToTop";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Shop from "./pages/Shop";
@@ -12,27 +13,41 @@ import AnnouncementBar from "./components/AnnouncementBar";
 import Footer from "./components/Footer";
 import NotFound from "./pages/NotFound";
 import NewArrivals from "./pages/NewArrivals";
-import BestSellers from "./pages/BestSellersPage"; // 🎯 1. استدعاء الصفحة الجديدة هنا
+import BestSellers from "./pages/BestSellersPage";
 import Login from "./pages/Login";
 import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
-import Offers from "./pages/Offers"; // تأكد من استدعاء صفحة العروض الجديدة
+import Offers from "./pages/Offers";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import { useAuthStore } from "./store/authStore";
 
-// 🔐 1. واقي المسارات المحمية للزبائن (체크 التوكن)
+// 🔐 Protected route guard — validates auth state, not just token existence
 function ProtectedRoute() {
-  const token = localStorage.getItem("nuit_auth_token");
+  const { isAuthenticated, hasCheckedAuth, checkAuth } = useAuthStore();
 
-  // لو مفيش توكن محفوظ، روت المستخدم لصفحة اللوجين فوراً
-  if (!token) {
+  useEffect(() => {
+    if (!hasCheckedAuth) {
+      checkAuth();
+    }
+  }, [hasCheckedAuth, checkAuth]);
+
+  // Show spinner while verifying token with the backend
+  if (!hasCheckedAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <span className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // لو التوكن موجود، خليه يكمل ويشوف الصفحة جوه الـ Layout عادي
   return <Outlet />;
 }
 
-// 2. Storefront layout wrapper with Nav and Footer
+// Storefront layout wrapper with Nav and Footer
 function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
@@ -57,8 +72,9 @@ function StorefrontLayout({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
-        {/* 🌍 المسارات العامة المفتوحة لأي زائر */}
+        {/* Public routes */}
         <Route path="/" element={<StorefrontLayout><Home /></StorefrontLayout>} />
         <Route path="/shop" element={<StorefrontLayout><Shop /></StorefrontLayout>} />
         <Route path="/product/:id" element={<StorefrontLayout><Product /></StorefrontLayout>} />
@@ -69,19 +85,16 @@ function App() {
         <Route path="/new-arrivals" element={<StorefrontLayout><NewArrivals /></StorefrontLayout>} />
         <Route path="/offers" element={<StorefrontLayout><Offers /></StorefrontLayout>} />
         <Route path="/order-confirmation" element={<StorefrontLayout><OrderConfirmation /></StorefrontLayout>} />
-
-        {/* 🎯 2. الـ Route السحري اللي هيشغل صفحة الأكثر مبيعاً ويقضي على الـ 404 */}
         <Route path="/best-sellers" element={<StorefrontLayout><BestSellers /></StorefrontLayout>} />
-        
         <Route path="/login" element={<StorefrontLayout><Login /></StorefrontLayout>} />
 
-        {/* 🔒 المسارات المحمية (لازم يكون مسجل دخول ومعاه توكن) */}
+        {/* Protected routes (requires valid auth) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<StorefrontLayout><Profile /></StorefrontLayout>} />
           <Route path="/checkout" element={<StorefrontLayout><Checkout /></StorefrontLayout>} />
         </Route>
 
-        {/* 🚫 صفحة الخطأ لأي مسار غريب */}
+        {/* 404 fallback */}
         <Route path="*" element={<StorefrontLayout><NotFound /></StorefrontLayout>} />
       </Routes>
     </Router>

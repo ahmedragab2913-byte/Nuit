@@ -9,6 +9,7 @@ class Order extends Model
         'order_number',
         'customer_id',
         'user_id',
+        'promo_code_id',
         'total',
         'status',
         'items',
@@ -39,6 +40,11 @@ class Order extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function promoCode()
+    {
+        return $this->belongsTo(PromoCode::class);
     }
 
     public function orderItems()

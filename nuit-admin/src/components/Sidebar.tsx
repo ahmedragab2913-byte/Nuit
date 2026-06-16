@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, ShoppingCart, Users, Megaphone, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, Megaphone, Truck, Ticket, Settings, LogOut } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
@@ -14,6 +14,8 @@ export default function Sidebar() {
     { to: "/dashboard/orders", label: "Orders", icon: <ShoppingCart size={16} /> },
     { to: "/dashboard/customers", label: "Customers", icon: <Users size={16} /> },
     { to: "/dashboard/announcements", label: "Announcements", icon: <Megaphone size={16} /> },
+    { to: "/dashboard/shipping-rates", label: "Shipping Rates", icon: <Truck size={16} /> },
+    { to: "/dashboard/promo-codes", label: "Promo Codes", icon: <Ticket size={16} /> },
   ];
 
   const handleLogout = async () => {

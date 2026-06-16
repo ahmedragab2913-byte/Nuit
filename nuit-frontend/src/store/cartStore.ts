@@ -3,22 +3,48 @@ import { persist } from "zustand/middleware";
 import type { Product, CartItem } from "../types";
 import { getProducts, getDBCart, syncDBCart } from "../services/api";
 
+// ─── DB Cart Item shape returned by the API ───────────────────
+interface DBCartItem {
+  id: number;
+  quantity: number;
+  product: Product;
+}
+
+// ─── Debounce timer for syncWithDB ────────────────────────────
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+const SYNC_DEBOUNCE_MS = 600;
+
+// ─── Product cache TTL ────────────────────────────────────────
+const PRODUCTS_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 interface CartStoreState {
   cart: CartItem[];
   wishlisted: number[]; // Store product IDs
   products: Product[];
+  productsLoadedAt: number; // timestamp for TTL
   loading: boolean;
   error: string | null;
   
   // Actions
-  fetchProducts: () => Promise<void>;
+  fetchProducts: (force?: boolean) => Promise<void>;
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: number) => void;
   updateQty: (productId: number, quantity: number) => void;
   toggleWish: (productId: number) => void;
-  clearCart: () => void;
+  clearCart: (skipSync?: boolean) => void;
   syncWithDB: () => Promise<void>;
   loadFromDB: () => Promise<void>;
+}
+
+/**
+ * Schedules a debounced syncWithDB call.
+ * Prevents N rapid mutations from firing N API requests.
+ */
+function debouncedSync(get: () => CartStoreState) {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    get().syncWithDB();
+  }, SYNC_DEBOUNCE_MS);
 }
 
 export const useCartStore = create<CartStoreState>()(
@@ -27,15 +53,25 @@ export const useCartStore = create<CartStoreState>()(
       cart: [],
       wishlisted: [],
       products: [],
+      productsLoadedAt: 0,
       loading: false,
       error: null,
 
-      fetchProducts: async () => {
-        if (get().products.length > 0) return;
+      fetchProducts: async (force = false) => {
+        const state = get();
+        // Skip if products are cached and within TTL (unless forced)
+        if (
+          !force &&
+          state.products.length > 0 &&
+          Date.now() - state.productsLoadedAt < PRODUCTS_TTL_MS
+        ) {
+          return;
+        }
+
         try {
           set({ loading: true, error: null });
           const products = await getProducts();
-          set({ products });
+          set({ products, productsLoadedAt: Date.now() });
         } catch (err) {
           console.error("Failed to fetch products:", err);
           set({ error: "Unable to load the collection. Please try again later." });
@@ -59,14 +95,14 @@ export const useCartStore = create<CartStoreState>()(
           }
           return { cart: newCart };
         });
-        get().syncWithDB();
+        debouncedSync(get);
       },
 
       removeFromCart: (productId) => {
         set((state) => ({
           cart: state.cart.filter((item) => item.product.id !== productId),
         }));
-        get().syncWithDB();
+        debouncedSync(get);
       },
 
       updateQty: (productId, quantity) => {
@@ -80,7 +116,7 @@ export const useCartStore = create<CartStoreState>()(
             ),
           };
         });
-        get().syncWithDB();
+        debouncedSync(get);
       },
 
       toggleWish: (productId) => {
@@ -94,29 +130,32 @@ export const useCartStore = create<CartStoreState>()(
         });
       },
 
-      clearCart: () => {
+      clearCart: (skipSync = false) => {
         set({ cart: [] });
-        get().syncWithDB();
+        // Cancel any pending debounced sync
+        if (syncTimer) {
+          clearTimeout(syncTimer);
+          syncTimer = null;
+        }
+        if (!skipSync) {
+          get().syncWithDB(); // immediate, no debounce — this is intentional
+        }
       },
 
       syncWithDB: async () => {
         try {
-          const hasCheckedAuth = (await import("./authStore")).useAuthStore.getState().isAuthenticated;
-          if (!hasCheckedAuth) return;
+          // ✅ Check token directly — avoids circular import with authStore
+          const token = typeof window !== "undefined"
+            ? localStorage.getItem("nuit_auth_token")
+            : null;
+          if (!token) return;
 
-          // 1. بناء الـ Array الخاصة بالمنتجات
           const mappedItems = get().cart.map((item) => ({
             product_id: item.product.id,
             quantity: item.quantity,
           }));
 
-          // 2. تغليف الـ Array داخل الـ Object المطلوب من الباك إيند بالملي
-          const payload = {
-            items: mappedItems
-          };
-
-          // 3. إرسال الـ Payload المتغلف
-          await syncDBCart(payload);
+          await syncDBCart({ items: mappedItems });
         } catch (err) {
           console.error("Cart sync with DB failed:", err);
         }
@@ -125,11 +164,11 @@ export const useCartStore = create<CartStoreState>()(
       loadFromDB: async () => {
         try {
           set({ loading: true });
-          const dbItems = await getDBCart();
+          const dbItems: DBCartItem[] = await getDBCart();
           if (Array.isArray(dbItems)) {
             const productsList = get().products.length > 0 ? get().products : await getProducts();
             
-            const cartItems: CartItem[] = dbItems.map((dbItem: any) => {
+            const cartItems: CartItem[] = dbItems.map((dbItem) => {
               const product = productsList.find((p) => p.id === dbItem.product.id) || dbItem.product;
               return {
                 product,
@@ -137,7 +176,7 @@ export const useCartStore = create<CartStoreState>()(
               };
             });
 
-            set({ cart: cartItems, products: productsList });
+            set({ cart: cartItems, products: productsList, productsLoadedAt: Date.now() });
           }
         } catch (err) {
           console.error("Failed to load cart from DB:", err);

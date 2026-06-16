@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\ShippingRateController;
+use App\Http\Controllers\Api\PromoCodeController;
 
 Route::prefix('v1')->group(function () {
 
@@ -23,14 +25,12 @@ Route::prefix('v1')->group(function () {
     Route::get('/products/new-arrivals', [ProductController::class, 'newArrivals']);
     Route::get('/products/best-sellers', [ProductController::class, 'getBestSellers']);
     
-    // تم نقل الفئات وتفاصيل المنتج لهنا عشان تظهر للعميل العادي
     Route::get('/products/categories', function () {
         return response()->json(
             \App\Models\Product::distinct()->pluck('category')->filter()->values()
         );
     });
-    Route::get('/products/{product}', [ProductController::class, 'show']);
-    
+    Route::get('/shipping-rates', [ShippingRateController::class, 'index']);
     Route::get('/announcements', [AnnouncementController::class, 'active']);
 
     // --- 3. Protected Routes (Registered Users: Customers) ---
@@ -56,6 +56,9 @@ Route::prefix('v1')->group(function () {
         // Client Checkout and Order History
         Route::post('/checkout', [OrderController::class, 'store']);
         Route::get('/my-orders', [OrderController::class, 'myOrders']);
+
+        // 🏷️ Promo Codes Validation for Checkout/Cart
+        Route::post('/promo-codes/validate', [PromoCodeController::class, 'validatePromo']);
     });
 
     // --- 4. Protected Admin Routes (Requires Sanctum auth & Admin role) ---
@@ -80,8 +83,24 @@ Route::prefix('v1')->group(function () {
         Route::put('/products/{product}', [ProductController::class, 'update']);
         Route::delete('/products/{product}', [ProductController::class, 'destroy']);
         Route::post('/products/import', [ProductController::class, 'import']);
+        
+        // Shipping Rates Management
+        Route::post('/shipping-rates', [ShippingRateController::class, 'store']);
+        Route::put('/shipping-rates/{id}', [ShippingRateController::class, 'update']);
+        Route::delete('/shipping-rates/{id}', [ShippingRateController::class, 'destroy']);
+
+        // 🎫 Promo Codes Management for Admin Dashboard
+        Route::get('/admin/promo-codes', [PromoCodeController::class, 'index']);
+        Route::post('/admin/promo-codes', [PromoCodeController::class, 'store']);
+        Route::patch('/admin/promo-codes/{promoCode}/toggle', [PromoCodeController::class, 'toggleStatus']);
+        Route::delete('/admin/promo-codes/{promoCode}', [PromoCodeController::class, 'destroy']);
+
+        // Product Exports/Templates
         Route::get('/products/export', [ProductController::class, 'export']);
         Route::get('/products/template', [ProductController::class, 'template']);
     });
+
+    // --- 5. Dynamic Fallback Routes (تحت خالص عشان ما تبلعش أي رابط ثابت) ---
+    Route::get('/products/{product}', [ProductController::class, 'show']);
 
 });

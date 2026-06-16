@@ -9,7 +9,8 @@ import Products from "./pages/Products";
 import Orders from "./pages/Orders";
 import Customers from "./pages/Customers";
 import Announcements from "./pages/Announcements";
-// ❌ تم حذف الـ import الخاص بـ getCsrfCookie لأنه لم يعد مطلوباً مع الـ Tokens
+import ShippingRates from "./pages/ShippingRates";
+import PromoCodes from "./pages/PromoCodes";
 
 // 1. Private Route Wrapper
 function PrivateRoute() {
@@ -56,8 +57,6 @@ function DashboardLayout() {
 
 // 3. Main App Router
 export default function App() {
-  // 🔑 تم تنظيف الـ useEffect القديم بنجاح لقطع أي اتصال بالـ CSRF التقليدي
-
   return (
     <Router>
       <Routes>
@@ -72,6 +71,9 @@ export default function App() {
             <Route path="orders" element={<Orders />} />
             <Route path="customers" element={<Customers />} />
             <Route path="announcements" element={<Announcements />} />
+            
+            <Route path="shipping-rates" element={<ShippingRates />} />
+            <Route path="promo-codes" element={<PromoCodes />} />
           </Route>
         </Route>
 

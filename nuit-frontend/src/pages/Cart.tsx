@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
+import { ShoppingBag, Minus, Plus, Trash2, MapPin } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
@@ -9,8 +9,8 @@ export default function Cart() {
   const navigate = useNavigate();
   const { cart, removeFromCart, updateQty } = useCartStore();
 
+  // 🧮 حساب إجمالي المنتجات فقط بشكل نظيف
   const cartTotal = cart.reduce((s, i) => s + i.product.price * i.quantity, 0);
-  const shipping  = cartTotal >= 1500 ? 0 : 50; // تم تعديل الشرط والشرائح لتناسب العملة المحلية EGP بشكل منطقي
 
   return (
     <div className="pt-28 px-8 lg:px-20 pb-24 min-h-screen bg-background text-foreground" style={sans}>
@@ -32,7 +32,7 @@ export default function Cart() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-          {/* Items */}
+          {/* Items List */}
           <div className="lg:col-span-2">
             {cart.map((item, i) => (
               <div key={item.product.id} className={`flex gap-6 py-8 ${i < cart.length - 1 ? "border-b border-border" : ""}`}>
@@ -57,7 +57,6 @@ export default function Cart() {
                     </button>
                   </div>
                   <div className="flex items-center justify-between mt-5">
-                    {/* تعديل فونت رقم العداد إلى الـ Sans المودرن */}
                     <div className="flex items-center border border-border bg-background">
                       <button 
                         onClick={() => updateQty(item.product.id, item.quantity - 1)} 
@@ -76,7 +75,6 @@ export default function Cart() {
                         <Plus size={10} />
                       </button>
                     </div>
-                    {/* تم إصلاح الفونت هنا بإضافة style={sans} داخل كلاس الـ HTML */}
                     <p className="text-sm text-foreground/90 font-medium" style={sans}>
                       EGP {(item.product.price * item.quantity).toLocaleString()}
                     </p>
@@ -93,39 +91,36 @@ export default function Cart() {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground font-light">Subtotal</span>
-                  {/* تطبيق الفونت الهندسي للأرقام */}
                   <span className="text-foreground font-medium" style={sans}>EGP {cartTotal.toLocaleString()}</span>
                 </div>
+                
+                {/* 🚚 عزل منطق الحسابات الثابتة لتجنب الاختلاف مع صفحة الـ Checkout */}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground font-light">Shipping</span>
-                  {/* تطبيق الفونت الهندسي للأرقام */}
-                  <span className="text-foreground font-medium" style={sans}>
-                    {shipping === 0 ? "Free" : `EGP ${shipping}`}
-                  </span>
-                </div>
-                {shipping === 0 && (
-                  <p className="text-[10px] tracking-widest uppercase text-primary font-medium bg-primary/5 py-1 px-2.5 inline-block rounded-sm">
-                    Free shipping applied
-                  </p>
-                )}
-                {shipping > 0 && (
-                  <p className="text-[11px] text-muted-foreground/80 font-light" style={sans}>
-                    Add EGP {(1500 - cartTotal).toLocaleString()} more for free shipping
-                  </p>
-                )}
-              </div>
-              
-              <div className="border-t border-border pt-5 mb-8">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-foreground font-light">Total</span>
-                  {/* إجبار السعر الإجمالي النهائي الكبير على الفونت المودرن النظيف ليعالج مشكلة الصفر والـ 4 والـ 5 */}
-                  <span className="text-2xl font-light text-foreground tracking-wide" style={sans}>
-                    EGP {(cartTotal + shipping).toLocaleString()}
+                  <span className="text-amber-500/90 text-[10px] tracking-wider font-normal normal-case">
+                    Calculated at checkout
                   </span>
                 </div>
               </div>
 
-              <div className="flex mb-6">
+              {/* إشعار ذكي يوضح للعميل إن الشحن هيتحسب بناءً على عنوانه */}
+              <div className="mb-6 bg-secondary/80 border border-border/60 p-3 rounded-sm flex items-start gap-2.5">
+                <MapPin size={13} className="text-muted-foreground mt-0.5 flex-shrink-0" />
+                <p className="text-[10px] text-muted-foreground leading-relaxed font-light">
+                  Shipping rates vary by city and will be calculated dynamically once you select your delivery address.
+                </p>
+              </div>
+              
+              <div className="border-t border-border pt-5 mb-8">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-foreground font-light">Estimated Total</span>
+                  <span className="text-2xl font-light text-foreground tracking-wide" style={sans}>
+                    EGP {cartTotal.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* <div className="flex mb-6">
                 <input 
                   type="text" 
                   placeholder="Promo code" 
@@ -134,7 +129,7 @@ export default function Cart() {
                 <button className="border border-border bg-background px-5 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors cursor-pointer">
                   Apply
                 </button>
-              </div>
+              </div> */}
 
               <button 
                 onClick={() => navigate("/checkout")}

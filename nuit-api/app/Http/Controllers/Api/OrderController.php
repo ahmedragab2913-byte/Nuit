@@ -93,6 +93,9 @@ class OrderController extends Controller
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity'   => 'required|integer|min:1',
             'promo_code'         => 'nullable|string',
+            'shipping_cost'      => 'required|numeric|min:0',
+            'discount_amount'    => 'required|numeric|min:0',
+            'total_price'        => 'required|numeric|min:0',
         ]);
 
         $addressId = $request->input('address_id');
@@ -108,9 +111,9 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Run entire checkout within a DB Transaction with Lock to prevent race conditions
         try {
-            $order = DB::transaction(function () use ($user, $address, $paymentMethod, $requestedItems, $request) {
+            // Run entire checkout within a DB Transaction with Lock to prevent race conditions
+            list($order, $subtotal, $shippingCost, $discountAmount, $grandTotal, $itemsSnapshot, $addressSnapshot) = DB::transaction(function () use ($user, $address, $paymentMethod, $requestedItems, $request) {
                 $subtotal = 0.00;
                 $itemsSnapshot = [];
                 $orderItemsToCreate = [];
@@ -128,7 +131,7 @@ class OrderController extends Controller
 
                     // Check stock
                     if ($product->stock < $qty) {
-                        throw new \Exception("Insufficient stock for product: {$product->name}. Available: {$product->stock} , Requested:  {$qty}");
+                        throw new \Exception("Insufficient stock for product: {$product->name}. Available: {$product->stock} , Requested: {$qty}");
                     }
 
                     // Deduct stock and update sales count
@@ -158,13 +161,26 @@ class OrderController extends Controller
                     ];
                 }
 
-                // Check shipping rules: Subtotal >= 1500 EGP gets free shipping, else 50 EGP
-                $shippingCost = $subtotal >= 1500 ? 0.00 : 50.00;
+                // Use the validated financial values from the request
+                $shippingCost = (float) $request->input('shipping_cost');
+                $discountAmount = (float) $request->input('discount_amount');
+                $requestedTotal = (float) $request->input('total_price');
 
-                // 🎫 Promo Code Discount logic
-                $discountAmount = 0.00;
+                // Re‑calculate server side total to ensure integrity
+                $calculatedTotal = $subtotal + $shippingCost - $discountAmount;
+                if ($calculatedTotal < 0) {
+                    $calculatedTotal = 0.00;
+                }
+
+                // Ensure the client‑side total matches the server calculation (allow tiny rounding diff)
+                if (abs($requestedTotal - $calculatedTotal) > 0.01) {
+                    throw new \Exception('Total price mismatch between client and server calculations.');
+                }
+
+                $grandTotal = $calculatedTotal;
                 $promoCodeId = null;
 
+                // Promo Code Discount logic (for logging/usage purposes)
                 if ($request->filled('promo_code')) {
                     $promo = \App\Models\PromoCode::where('code', $request->input('promo_code'))
                         ->where('is_active', true)
@@ -196,27 +212,8 @@ class OrderController extends Controller
                         throw new \Exception("You have reached the usage limit for this promo code.");
                     }
 
-                    // Calculate discount
-                    if ($promo->type === 'percentage') {
-                        $discountAmount = ($promo->value / 100) * $subtotal;
-                        if ($promo->max_discount_amount && $discountAmount > $promo->max_discount_amount) {
-                            $discountAmount = (float) $promo->max_discount_amount;
-                        }
-                    } else {
-                        $discountAmount = (float) $promo->value;
-                    }
-
-                    if ($discountAmount > $subtotal) {
-                        $discountAmount = $subtotal;
-                    }
-
                     $promoCodeId = $promo->id;
                     $promo->increment('used_count');
-                }
-
-                $grandTotal = $subtotal + $shippingCost - $discountAmount;
-                if ($grandTotal < 0) {
-                    $grandTotal = 0.00;
                 }
 
                 // Sync or create client as Customer record in DB if not exists
@@ -249,19 +246,21 @@ class OrderController extends Controller
                     'customer_id'      => $customer->id,
                     'user_id'          => $user->id,
                     'promo_code_id'    => $promoCodeId,
-                    'total'            => $grandTotal, // backward compatibility
                     'subtotal'         => $subtotal,
                     'shipping_cost'    => $shippingCost,
                     'discount_amount'  => $discountAmount,
+                    'total_price'      => $grandTotal,
+                    'total'            => $grandTotal, 
                     'grand_total'      => $grandTotal,
                     'status'           => 'pending',
                     'payment_method'   => $paymentMethod,
                     'payment_status'   => 'pending',
-                    'items'            => $itemsSnapshot, // backward compatibility
+                    'items'            => $itemsSnapshot, 
                     'shipping_address' => $addressSnapshot,
                 ]);
 
-                // Create OrderItem snapshots in order_items table
+                $order->refresh();
+
                 foreach ($orderItemsToCreate as $oi) {
                     $oi['order_id'] = $order->id;
                     OrderItem::create($oi);
@@ -273,7 +272,7 @@ class OrderController extends Controller
                     CartItem::where('cart_id', $cart->id)->delete();
                 }
 
-                return $order;
+                return [$order, $subtotal, $shippingCost, $discountAmount, $grandTotal, $itemsSnapshot, $addressSnapshot];
             });
 
             return response()->json([
@@ -281,17 +280,18 @@ class OrderController extends Controller
                 'data'   => [
                     'order_id'          => $order->id,
                     'order_number'      => $order->order_number,
-                    'subtotal'          => $order->subtotal,
-                    'shipping_cost'     => $order->shipping_cost,
-                    'discount_amount'   => $order->discount_amount,
-                    'promo_code'        => $order->promoCode ? $order->promoCode->code : null,
-                    'grand_total'       => $order->grand_total,
+                    'subtotal'          => (float) $subtotal,
+                    'shipping_cost'     => (float) $shippingCost,
+                    'discount_amount'   => (float) $discountAmount,
+                    'total_price'       => (float) $grandTotal,
+                    'promo_code'        => $request->input('promo_code'),
                     'customer_name'     => $user->name,
-                    'items'             => $order->items,
-                    'shipping_address'  => $order->shipping_address,
+                    'items'             => $itemsSnapshot,
+                    'shipping_address'  => $addressSnapshot,
                     'estimated_days'    => '3-5',
                 ],
             ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',

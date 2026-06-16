@@ -239,6 +239,9 @@ export interface CheckoutPayload {
   payment_method: string;
   items: { product_id: number; quantity: number }[];
   promo_code?: string;
+  shipping_cost: number;
+  discount_amount: number;
+  total_price: number;
 }
 
 export const placeOrder = async (payload: CheckoutPayload) => {

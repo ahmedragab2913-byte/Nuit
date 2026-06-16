@@ -178,7 +178,8 @@ export default function Checkout() {
     }
   };
 
-  const handlePlaceOrder = async () => {
+const handlePlaceOrder = async () => {
+    // 🎯 حماية QA: منع إرسال الطلب نهائيًا لو الشحن لسه بيتحسب أو قيمته null
     if (!selectedAddressId || dynamicShippingCost === null) {
       setError("Please select a valid delivery address to calculate shipping.");
       return;
@@ -196,11 +197,15 @@ export default function Checkout() {
         quantity: i.quantity,
       }));
 
+      // 🎯 تمرير البيانات المالية كاملة وجاهزة للباك إيند لمطابقتها في الـ Validation
       const res = await placeOrder({
         address_id: selectedAddressId,
         payment_method: paymentMethod,
         items: itemsPayload,
         promo_code: appliedPromo ? appliedPromo.code : undefined,
+        shipping_cost: shipping,      // القيمة الحقيقية (مثال: 100)
+        discount_amount: discount,    // قيمة الخصم (مثال: 600)
+        total_price: grandTotal,      // الإجمالي الصافي النهائي (مثال: 1900)
       });
 
       if (res.status === "success" && res.data) {

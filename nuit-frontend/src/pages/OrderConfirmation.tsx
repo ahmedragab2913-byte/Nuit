@@ -23,18 +23,29 @@ export default function OrderConfirmation() {
     );
   }
 
-  // توحيد مسميات الكيز لضمان قراءتها أياً كان مصدرها
+// 1. المسميات الأساسية
   const orderId = orderData.order_id || orderData.id;
   const orderNumber = orderData.order_number || `#NU-${orderId}`;
-  const totalPrice = orderData.total_price || orderData.grand_total;
-  const deliveryDays = orderData.delivery_days || orderData.estimated_days || "3-5";
+  
+  // 2. تحويل وتأمين القيم المالية بالكامل لأرقام صريحة لمنع خداع النصوص "0.00"
+  const totalPrice = Number(orderData.total_price || orderData.total || orderData.grand_total || 0);
+  const subtotal = Number(orderData.subtotal || 0);
+  const discountAmount = Number(orderData.discount_amount || orderData.discount || 0);
+  
+  // قراءة مباشرة للشحن المحتمل من الباك إيند بعد تحويله لرقم صريح
+  const backendShipping = Number(orderData.shipping_cost || orderData.shipping_amount || orderData.shipping_fee || 0);
+  
+  // 3. الحسبة الديناميكية الذكية كـ خط دفاع أخير
+  const calculatedShipping = totalPrice - subtotal + discountAmount;
+
+  // 4. لو الشحن الجاي من الباك إيند صفر، استخدم الحسبة الديناميكية فوراً
+  const shippingCost = backendShipping > 0 ? backendShipping : (calculatedShipping > 0 ? calculatedShipping : 0);  
+  
+  // 5. بقية البيانات
+  const deliveryDays = orderData.delivery_days || orderData.estimated_days || orderData.shipping_rate?.delivery_days || "3-5";
   const items = orderData.items || [];
   const shippingAddress = orderData.shipping_address;
-  const subtotal = orderData.subtotal || 0;
-  const shippingCost = orderData.shipping_cost || 0;
-  const discountAmount = orderData.discount_amount || 0;
   const promoCode = orderData.promo_code || null;
-
   // دالة ذكية لمعالجة وعرض العنوان بأي شكل يرجع به من الباك إيند
   const renderShippingAddress = () => {
     if (!shippingAddress) return "Your Saved Address";

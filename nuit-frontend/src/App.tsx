@@ -19,7 +19,9 @@ import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
 import Offers from "./pages/Offers";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import Wishlist from "./pages/Wishlist";
 import { useAuthStore } from "./store/authStore";
+import { useLanguageStore } from "./store/languageStore";
 
 // 🔐 Protected route guard — validates auth state, not just token existence
 function ProtectedRoute() {
@@ -49,8 +51,11 @@ function ProtectedRoute() {
 
 // Storefront layout wrapper with Nav and Footer
 function StorefrontLayout({ children }: { children: React.ReactNode }) {
+  const { language } = useLanguageStore();
+  const dir = language === "ar" ? "rtl" : "ltr";
+  
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div dir={dir} className="min-h-screen bg-background text-foreground flex flex-col justify-between">
       {/* ── HEADER SHELL (fixed) ── */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <AnnouncementBar />
@@ -79,6 +84,7 @@ function App() {
         <Route path="/shop" element={<StorefrontLayout><Shop /></StorefrontLayout>} />
         <Route path="/product/:id" element={<StorefrontLayout><Product /></StorefrontLayout>} />
         <Route path="/cart" element={<StorefrontLayout><Cart /></StorefrontLayout>} />
+        <Route path="/wishlist" element={<StorefrontLayout><Wishlist /></StorefrontLayout>} />
         <Route path="/about" element={<StorefrontLayout><About /></StorefrontLayout>} />
         <Route path="/privacy-policy" element={<StorefrontLayout><PrivacyPolicy /></StorefrontLayout>} />
         <Route path="/terms-conditions" element={<StorefrontLayout><TermsConditions /></StorefrontLayout>} />

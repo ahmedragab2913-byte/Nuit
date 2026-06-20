@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Heart } from "lucide-react";
+import { ArrowRight, Heart, Search, X } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
+import { useLanguageStore, getBilingualValue, formatPrice } from "../store/languageStore";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
 const sans  = { fontFamily: "'Raleway', sans-serif" };
@@ -9,87 +10,147 @@ const sans  = { fontFamily: "'Raleway', sans-serif" };
 export default function Home() {
   const navigate = useNavigate();
   const { products, loading, error, wishlisted, fetchProducts, toggleWish } = useCartStore();
+  const { language, t } = useLanguageStore();
+  
+  // تفعيل حالة البحث الفوري
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(true);
   }, [fetchProducts]);
+  
+  // البحث في الـ tagline أو الوصف عن كلمة best seller بشكل مرن لتجنب مشاكل الـ Types
+  const bestSellerProduct = products.find(
+    (p) => p.tagline?.toLowerCase().includes("best") || p.description?.toLowerCase().includes("best")
+  );
 
-  const signatureProduct = products.find((p) => p.featured) ?? products[0];
+  // معالجة البحث عند الضغط على Enter
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+      setSearchQuery("");
+    }
+  };
 
   return (
-    <div style={sans}>
-      {/* Hero */}
-      <section className="relative h-screen flex items-end overflow-hidden">
-        <div
-          className="absolute inset-0 bg-secondary"
-          style={{
-            backgroundImage: `url(https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?w=1800&h=1200&fit=crop&auto=format)`,
-            backgroundSize: "cover",
-            backgroundPosition: "center 40%",
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/10" />
-        <div className="relative z-10 px-8 lg:px-20 pb-24 max-w-4xl">
-          <p className="text-[10px] tracking-[0.5em] uppercase text-primary mb-7">
-            Maison de Parfum · Paris
-          </p>
-          <h1 className="text-6xl lg:text-8xl font-light text-foreground leading-[1.05] mb-8" style={serif}>
-            The art of<br />
-            <em className="text-primary/90">luxury in every bottle</em>
-          </h1>
-          <p className="text-muted-foreground max-w-sm mb-10 leading-relaxed text-sm font-light">
-            A curated collection of premium fragrances crafted for every occasion. Experience long-lasting elegance that defines your presence.
-          </p>
-          <button
-            onClick={() => navigate("/shop")}
-            className="group flex items-center gap-4 text-[11px] tracking-[0.25em] uppercase text-foreground border border-border px-9 py-4 hover:border-primary hover:text-primary transition-all duration-300 cursor-pointer"
+    <div style={sans} className="bg-background min-h-screen text-foreground overflow-x-hidden">
+      
+      {/* Search Bar Floating Overlay */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 bg-background/95 z-[70] flex flex-col items-center justify-center p-6 backdrop-blur-sm transition-all duration-300">
+          <button 
+            onClick={() => setIsSearchOpen(false)} 
+            className="absolute top-8 right-8 text-muted-foreground hover:text-primary transition-colors cursor-pointer focus:outline-none"
           >
-            Discover the Collection
-            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            <X size={24} />
           </button>
+          <form onSubmit={handleSearchSubmit} className="w-full max-w-2xl border-b border-border/60 py-4 flex items-center gap-4">
+            <Search size={22} className="text-muted-foreground" />
+            <input 
+              type="text" 
+              placeholder={t("searchPlaceholder")} 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+              className="w-full bg-transparent text-2xl font-light text-foreground focus:outline-none placeholder:text-muted-foreground/35"
+              style={serif}
+            />
+          </form>
+        </div>
+      )}
+
+      {/* Hero */}
+      <section className="relative h-[85vh] flex items-center justify-center bg-black overflow-hidden select-none">
+        {/* Background Image with luxury soft dark mask */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-black/60 z-10" />
+          <img 
+            src="https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&q=80&w=2000" 
+            alt="Luxury perfume bottle background" 
+            className="w-full h-full object-cover opacity-80"
+          />
+        </div>
+
+        <div className="relative z-10 text-center px-6 max-w-3xl space-y-6">
+          <p className="text-[11px] tracking-[0.45em] uppercase text-primary font-medium">{t("maisonParis")}</p>
+          <h1 className="text-5xl md:text-7xl font-extralight text-white leading-[1.1] md:leading-[1.15]" style={serif}>
+            {language === "ar" ? "فن الفخامة في زجاجة" : t("artOfLuxury")}
+          </h1>
+          <p className="text-sm md:text-base text-zinc-300 font-light max-w-xl mx-auto leading-relaxed">
+            {t("heroDesc")}
+          </p>
+          <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <button 
+              onClick={() => navigate("/shop")}
+              className="bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase font-semibold px-8 py-4.5 hover:bg-primary/95 transition-all w-56 cursor-pointer"
+            >
+              {t("discoverCollection")}
+            </button>
+            <button 
+              onClick={() => setIsSearchOpen(true)}
+              className="bg-transparent border border-white/20 hover:border-white/50 text-white text-xs tracking-[0.25em] uppercase font-semibold px-8 py-4.5 transition-all w-56 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Search size={13} /> {t("searchPlaceholder").slice(0, 12)}...
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* Featured / Recent Added */}
-      <section className="px-8 lg:px-20 py-28">
-        <div className="flex items-end justify-between mb-16">
+      {/* New Compositions */}
+      <section className="px-8 lg:px-20 py-28 max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-baseline mb-16 gap-4">
           <div>
-            <p className="text-[11px] tracking-[0.4em] uppercase text-primary mb-3">New Arrivals</p>
-            <h2 className="text-4xl lg:text-5xl font-light text-foreground" style={serif}>Just composed</h2>
+            <p className="text-[11px] tracking-[0.5em] uppercase text-primary mb-3">{t("justComposed")}</p>
+            <h2 className="text-4xl font-light text-foreground" style={serif}>
+              {language === "ar" ? "الروائح المبتكرة حديثاً" : "New Releases"}
+            </h2>
           </div>
-          <button
-            onClick={() => navigate("/shop")}
-            className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 mb-1 cursor-pointer"
+          <button 
+            onClick={() => navigate("/new-arrivals")}
+            className="group flex items-center gap-2 text-[11px] tracking-[0.25em] uppercase text-primary font-semibold hover:text-primary/80 transition-colors cursor-pointer"
           >
-            View All <ArrowRight size={11} />
+            {t("viewAll")} 
+            <ArrowRight size={13} className={`group-hover:translate-x-1 transition-transform ${language === "ar" ? "rotate-180" : ""}`} />
           </button>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="animate-pulse bg-secondary aspect-[3/4] rounded-sm" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 animate-pulse">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="flex flex-col">
+                <div className="bg-secondary aspect-[3/4] mb-5" />
+                <div className="h-3 bg-secondary w-1/3 mb-2 rounded-sm" />
+                <div className="h-4 bg-secondary w-2/3 mb-2 rounded-sm" />
+                <div className="h-3 bg-secondary w-1/4 rounded-sm" />
+              </div>
             ))}
           </div>
         ) : error ? (
-          <div className="text-center text-sm text-destructive py-20">{error}</div>
+          <p className="text-center text-sm text-muted-foreground">{error}</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {[...products]
               .sort((a, b) => b.id - a.id)
-              .slice(0, 3)
-              .map((product, i) => {
+              .slice(0, 4)
+              .map((product) => {
                 const isWish = wishlisted.includes(product.id);
+                const pName = getBilingualValue(product.name, product.name_ar, language);
+                const pCategory = language === "ar" && (t("categoryMap") as any)?.[product.category] 
+                  ? (t("categoryMap") as any)[product.category] 
+                      : product.category;
                 return (
                   <div
                     key={product.id}
-                    className={`group cursor-pointer ${i === 1 ? "md:mt-14" : ""}`}
+                    className="group cursor-pointer"
                     onClick={() => navigate(`/product/${product.id}`)}
                   >
                     <div className="relative overflow-hidden bg-secondary aspect-[3/4] mb-5">
                       <img 
                         src={product.image} 
-                        alt={product.name} 
+                        alt={pName} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
@@ -105,11 +166,13 @@ export default function Home() {
                         <Heart size={15} fill={isWish ? "currentColor" : "none"} />
                       </button>
                     </div>
-                    <p className="text-[11px] tracking-[0.3em] uppercase text-primary mb-1">{product.category}</p>
-                    <h3 className="text-xl text-foreground font-light mb-1" style={serif}>{product.name}</h3>
+                    <p className="text-[11px] tracking-[0.3em] uppercase text-primary mb-1">{pCategory}</p>
+                    <h3 className="text-xl text-foreground font-light mb-1" style={serif}>{pName}</h3>
                     <p className="text-xs text-muted-foreground italic mb-3">{product.tagline}</p>
-                    <p className="text-base font-light tracking-wider text-foreground" style={serif}>
-                     EGP {product.price} 
+                    
+                    <p className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
+                              style={{ fontFamily: "'Playfair Display', serif", color: "#313c45" }}>
+                      {formatPrice(product.price, language)}
                     </p>
                   </div>
                 );
@@ -118,28 +181,33 @@ export default function Home() {
         )}
       </section>
 
-      {/* Signature banner */}
-      {!loading && !error && signatureProduct && (
+      {/* Signature banner - Best Seller Setup */}
+      {!loading && !error && bestSellerProduct && (
         <section className="mx-8 lg:mx-20 mb-28">
           <div className="bg-secondary border border-border p-12 lg:p-20 flex flex-col lg:flex-row items-center gap-14">
             <div className="flex-1 order-2 lg:order-1">
-              <p className="text-[11px] tracking-[0.5em] uppercase text-primary mb-5">Signature Accord</p>
+              <p className="text-[11px] tracking-[0.5em] uppercase text-primary mb-5">{t("bestSellerAccord")}</p>
               <h2 className="text-4xl lg:text-5xl font-light text-foreground mb-6 leading-tight" style={serif}>
-                {signatureProduct.name} <br /><em>{signatureProduct.tagline}</em>
+                {getBilingualValue(bestSellerProduct.name, bestSellerProduct.name_ar, language)} <br />
+                <em>{bestSellerProduct.tagline}</em>
               </h2>
               <p className="text-muted-foreground mb-8 leading-relaxed text-sm max-w-md font-light">
-                {signatureProduct.description}
+                {getBilingualValue(bestSellerProduct.description, bestSellerProduct.description_ar, language)}
               </p>
               <button
-                onClick={() => navigate(`/product/${signatureProduct.id}`)}
+                onClick={() => navigate(`/product/${bestSellerProduct.id}`)}
                 className="group flex items-center gap-4 text-[11px] tracking-[0.25em] uppercase text-primary border border-primary px-8 py-4 hover:bg-primary hover:text-primary-foreground transition-all duration-300 cursor-pointer"
               >
-                Discover
-                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+                {t("discoverBestSeller")}
+                <ArrowRight size={13} className={`group-hover:translate-x-1 transition-transform ${language === "ar" ? "rotate-180" : ""}`} />
               </button>
             </div>
             <div className="w-60 h-72 bg-background overflow-hidden flex-shrink-0 order-1 lg:order-2">
-              <img src={signatureProduct.image} alt={signatureProduct.name} className="w-full h-full object-cover" />
+              <img 
+                src={bestSellerProduct.image} 
+                alt={getBilingualValue(bestSellerProduct.name, bestSellerProduct.name_ar, language)} 
+                className="w-full h-full object-cover" 
+              />
             </div>
           </div>
         </section>
@@ -149,18 +217,32 @@ export default function Home() {
       <section className="px-8 lg:px-20 py-28 border-t border-border">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
           <div>
-            <p className="text-[11px] tracking-[0.5em] uppercase text-primary mb-6">The Maison</p>
+            <p className="text-[11px] tracking-[0.5em] uppercase text-primary mb-6">{t("theMaison")}</p>
             <h2 className="text-4xl lg:text-5xl font-light text-foreground mb-8 leading-tight" style={serif}>
-              The art of fine fragrance<br /><em>crafted for every moment</em>
+              {language === "ar" ? (
+                <>
+                  فن العطور الراقية <br />
+                  <em className="text-primary/90">المصممة لكل لحظة</em>
+                </>
+              ) : (
+                <>
+                  The art of fine fragrance<br />
+                  <em className="text-primary/90">crafted for every moment</em>
+                </>
+              )}
             </h2>
             <p className="text-muted-foreground mb-5 leading-relaxed text-sm font-light">
-              Nuit was founded on the philosophy that a fragrance is more than just a scent—it is an invisible signature. Every bottle in our collection is meticulously blended to evoke emotions, inspire confidence, and complement your unique character throughout the day.
+              {t("aboutDesc1")}
             </p>
             <p className="text-muted-foreground mb-10 leading-relaxed text-sm font-light">
-              We source exceptional raw ingredients and premium oils to create balanced, long-lasting compositions. From vibrant fresh notes to deep, warm undertones, our perfumes are designed to evolve beautifully on your skin.
+              {t("aboutDesc2")}
             </p>
             <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border">
-              {[["+50","UNIQUE SCENTS"],["24h","Longevity"],["100%","PREMIUM QUALITY"]].map(([num, label]) => (
+              {[
+                ["+50", t("uniqueScents")],
+                ["24h", t("longevity")],
+                ["100%", t("premiumQuality")]
+              ].map(([num, label]) => (
                 <div key={label}>
                   <p className="text-3xl font-light text-primary mb-1" style={serif}>{num}</p>
                   <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">{label}</p>
@@ -173,7 +255,7 @@ export default function Home() {
               <img src="https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=1000&auto=format&fit=crop&q=80" alt="Perfumer at work" className="w-full h-full object-cover" />
             </div>
             <div className="absolute -bottom-6 -left-6 w-36 h-36 border border-border bg-background flex flex-col items-center justify-center">
-              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Est.</p>
+              <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-1">{t("est")}</p>
               <p className="text-3xl text-foreground font-light" style={serif}>2020</p>
             </div>
           </div>
@@ -181,102 +263,155 @@ export default function Home() {
       </section>
 
       {/* Notes strip — Seamless Infinite Scroll */}
-      <section className="border-t border-b border-border py-0 bg-background overflow-hidden relative select-none" style={{ height: "48px" }}>
-        <style>{`
-          @keyframes notes-ticker {
-            from { transform: translateX(0%); }
-            to   { transform: translateX(-50%); }
-          }
-          .notes-track {
-            display: flex;
-            animation: notes-ticker 22s linear infinite;
-            will-change: transform;
-          }
-          .notes-group {
-            display: flex;
-            align-items: center;
-            flex-shrink: 0;
-            height: 48px;
-            white-space: nowrap;
-            /* NO min-width — content width is the source of truth */
-          }
-          .notes-item {
-            font-size: 10px;
-            letter-spacing: 0.35em;
-            text-transform: uppercase;
-            color: var(--muted-foreground, #9c9c8e);
-            padding: 0 1.75rem;
-            transition: color 0.3s;
-            cursor: default;
-          }
-          .notes-item:hover { color: var(--primary, #8b7355); }
-          .notes-sep {
-            font-size: 7px;
-            opacity: 0.35;
-            flex-shrink: 0;
-          }
-        `}</style>
+<section className="border-t border-b border-border py-0 bg-background overflow-hidden relative select-none" style={{ height: "48px" }}>
+  <style>{`
+    @keyframes notes-ticker {
+      /* الحركة القياسية الضامنة لعدم حدوث أي قفزة أو تعليق نهائياً */
+      from { transform: translate3d(0, 0, 0); }
+      to   { transform: translate3d(-50%, 0, 0); }
+    }
+    
+    .notes-container {
+      width: 100%;
+      height: 48px;
+      position: relative;
+      direction: ltr; /* إجبار الاتجاه العام على ltr لحساب مسار الأنميشن بدقة */
+      overflow: hidden;
+    }
 
-        {/* Edge fades */}
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
-          background: "linear-gradient(to right, var(--background,#f8f5f1) 0%, transparent 8%, transparent 92%, var(--background,#f8f5f1) 100%)",
-        }} />
+    .notes-track {
+      display: inline-flex;
+      width: max-content;
+      animation: notes-ticker 60s linear infinite; /* نفس السرعة الراقية المطلوبة */
+      will-change: transform;
+      /* قلب اتجاه الحركة بصرياً لتخرج العناصر من اليمين وتختفي في أقصى الشمال */
+      flex-direction: row-reverse; 
+    }
+    
+    .notes-group {
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    
+    .notes-item-wrapper {
+      display: flex;
+      align-items: center;
+    }
 
-        {(() => {
-          // 14 notes × 3 = 42 items per group — always wider than any screen
-          const baseNotes = ["Vanilla","White Musk","Bergamot","Patchouli","Lavender","Sandalwood","Jasmine","Citrus","Amber","Cedarwood","Mint","Oud","Rose","Neroli"];
-          const notes = [...baseNotes, ...baseNotes, ...baseNotes];
+    .notes-item {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--muted-foreground, #9c9c8e);
+      padding: 0 1.75rem;
+      transition: color 0.3s;
+      cursor: default;
+      font-family: 'Raleway', 'Cairo', sans-serif;
+    }
+    
+    .notes-item:hover { 
+      color: var(--primary, #8b7355); 
+    }
+    
+    .notes-sep {
+      font-size: 7px;
+      opacity: 0.35;
+      flex-shrink: 0;
+      color: var(--muted-foreground, #9c9c8e);
+    }
 
-          const Group = () => (
-            <div className="notes-group">
-              {notes.map((note, i) => (
-                <span key={i} style={{ display: "flex", alignItems: "center" }}>
-                  <span className="notes-item">{note}</span>
-                  <span className="notes-sep">◆</span>
+    /* حماية النصوص العربية لتقرأ من اليمين لليسار بشكل طبيعي أثناء الدوران */
+    .arabic-note {
+      direction: rtl;
+      unicode-bidi: isolate;
+    }
+  `}</style>
+
+  {/* التظليل الجانبي المتناسق مع خلفية الموقع الثنائية أو المتغيرة */}
+  <div style={{
+    position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
+    background: "linear-gradient(to right, var(--background,#f8f5f1) 0%, transparent 8%, transparent 92%, var(--background,#f8f5f1) 100%)",
+  }} />
+
+  <div className="notes-container">
+    {(() => {
+      const baseNotes = [
+        t("noteVanilla"),
+        t("noteWhiteMusk"),
+        t("noteBergamot"),
+        t("notePatchouli"),
+        t("noteLavender"),
+        t("noteSandalwood"),
+        t("noteJasmine"),
+        t("noteCitrus"),
+        t("noteAmber"),
+        t("noteCedarwood"),
+        t("noteMint"),
+        t("noteOud"),
+        t("noteRose"),
+        t("noteNeroli")
+      ];
+      
+      // كررنا المصفوفة لضمان توفر عناصر كافية تملأ الشاشات الكبيرة وتمنع ظهور بياض
+      const notes = [...baseNotes, ...baseNotes, ...baseNotes];
+
+      const Group = () => (
+        <div className="notes-group">
+          {notes.map((note, i) => {
+            const isArabic = /[\u0600-\u06FF]/.test(note);
+            return (
+              <div key={i} className="notes-item-wrapper">
+                <span className={`notes-item ${isArabic ? "arabic-note" : ""}`}>
+                  {note}
                 </span>
-              ))}
-            </div>
-          );
+                <span className="notes-sep">◆</span>
+              </div>
+            );
+          })}
+        </div>
+      );
 
-          return (
-            <div className="notes-track">
-              <Group />  {/* group A */}
-              <Group />  {/* group B — identical, translateX(-50%) snaps back seamlessly */}
-            </div>
-          );
-        })()}
-      </section>
+      return (
+        <div className="notes-track">
+          {/* مجموعتين متطابقتين تماماً بتلحم ورا بعضها في حلقة مفرغة */}
+          <Group />
+          <Group />
+        </div>
+      );
+    })()}
+  </div>
+</section>
 
       {/* Newsletter */}
       <section className="py-16 text-center bg-background">
         <div className="max-w-2xl mx-auto px-4">
           <span className="text-xs font-semibold tracking-[0.35em] uppercase text-primary mb-4 block">
-            STAY IN THE DARK
+            {t("stayInDark")}
           </span>
-          
-          <h2 className="text-3xl md:text-4xl font-serif text-foreground tracking-wide mb-3">
-            Receive exclusive releases
+          <h2 className="text-3xl md:text-4xl font-serif text-foreground tracking-wide mb-3" style={serif}>
+            {t("receiveReleases")}
           </h2>
-          
           <p className="text-base font-normal text-foreground/70 max-w-md mx-auto mb-8 leading-relaxed">
-            New compositions, limited editions, and invitations to private events.
+            {t("newsletterDesc")}
           </p>
-          
           <form 
             onSubmit={(e) => e.preventDefault()}
             className="flex flex-col sm:flex-row max-w-md mx-auto items-stretch justify-center gap-0 border border-border/60 bg-white shadow-sm overflow-hidden rounded-sm"
           >
             <input
               type="email"
-              placeholder="your@email.com"
+              placeholder={t("emailPlaceholder")}
               className="w-full px-5 py-3.5 text-base bg-transparent text-foreground placeholder:text-muted-foreground/50 focus:outline-none flex-grow"
             />
             <button
               type="submit"
               className="bg-primary text-primary-foreground px-8 py-3.5 text-sm font-medium tracking-widest uppercase hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer"
             >
-              Subscribe
+              {t("subscribe")}
             </button>
           </form>
         </div>

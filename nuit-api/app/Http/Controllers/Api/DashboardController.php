@@ -39,6 +39,21 @@ class DashboardController extends Controller
                 ->groupBy('month')
                 ->orderBy('month')
                 ->get(),
+
+            'category_stats' => (function () {
+                $total = Product::count();
+                if ($total === 0) {
+                    return ['women_pct' => 0, 'men_pct' => 0, 'unisex_pct' => 0];
+                }
+                $women  = Product::where('category', 'Women Perfumes')->count();
+                $men    = Product::where('category', 'Men Perfumes')->count();
+                $unisex = Product::where('category', 'Unisex')->count();
+                return [
+                    'women_pct'  => round(($women  / $total) * 100),
+                    'men_pct'    => round(($men    / $total) * 100),
+                    'unisex_pct' => round(($unisex / $total) * 100),
+                ];
+            })(),
         ]);
     }
 }

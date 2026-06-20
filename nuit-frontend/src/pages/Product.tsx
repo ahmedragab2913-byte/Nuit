@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Heart, Minus, Plus, Link2, Check } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
+import { useLanguageStore, getBilingualValue, formatPrice } from "../store/languageStore";
 import { getProductById } from "../services/api";
 import type { Product as ProductType } from "../types";
+
 const serif = { fontFamily: "'Playfair Display', serif" };
 const sans  = { fontFamily: "'Raleway', sans-serif" };
 
@@ -15,28 +17,34 @@ export default function Product() {
   const [added, setAdded] = useState(false);
   const { products, wishlisted, fetchProducts, addToCart, toggleWish } = useCartStore();
   const [product, setProduct] = useState<ProductType | null>(null);
-const [pageLoading, setPageLoading] = useState(true);
-const [pageError, setPageError] = useState<string | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const { language, t } = useLanguageStore();
 
+  const translateCategory = (cat: string) => {
+    if (cat === "Men Perfumes") return t("mensPerfumes");
+    if (cat === "Women Perfumes") return t("womensPerfumes");
+    if (cat === "Unisex") return t("unisex");
+    return cat;
+  };
 
   useEffect(() => {
-  setPageLoading(true);
-  setPageError(null);
-  getProductById(Number(id))
-    .then(setProduct)
-    .catch(() => setPageError("Fragrance not found."))
-    .finally(() => setPageLoading(false));
-}, [id]);
+    setPageLoading(true);
+    setPageError(null);
+    getProductById(Number(id))
+      .then(setProduct)
+      .catch(() => setPageError(language === "ar" ? "لم يتم العثور على العطر." : "Fragrance not found."))
+      .finally(() => setPageLoading(false));
+  }, [id, language]);
 
-useEffect(() => {
-  fetchProducts(); // still needed for related products
-}, [fetchProducts]);
+  useEffect(() => {
+    fetchProducts(); // still needed for related products
+  }, [fetchProducts]);
 
-useEffect(() => {
-  setQty(1);
-}, [id]);
+  useEffect(() => {
+    setQty(1);
+  }, [id]);
 
-  // دالة نسخ رابط المنتج الحالي
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -59,17 +67,17 @@ useEffect(() => {
     );
   }
 
-  if (pageError  || !product) {
+  if (pageError || !product) {
     return (
       <div className="pt-32 px-8 lg:px-20 min-h-screen flex flex-col items-center justify-center text-center" style={serif}>
         <p className="text-muted-foreground text-sm font-light mb-6">
-          {pageError || "Fragrance not found."}
+          {pageError || (language === "ar" ? "لم يتم العثور على العطر." : "Fragrance not found.")}
         </p>
         <button
           onClick={() => navigate("/shop")}
-          className="text-[10px] tracking-[0.25em] uppercase text-foreground border border-border px-8 py-3 hover:border-primary hover:text-primary transition-all cursor-pointer"
+          className="text-[10px] tracking-[0.25em] uppercase text-foreground border border-border px-8 py-3 hover:border-primary hover:text-primary transition-all cursor-pointer font-semibold"
         >
-          Back to Collection
+          {language === "ar" ? "العودة إلى المجموعة" : "Back to Collection"}
         </button>
       </div>
     );
@@ -78,16 +86,15 @@ useEffect(() => {
   const isWish = wishlisted.includes(product.id);
   const relatedProducts = products.filter((p) => p.id !== product.id).slice(0, 4);
 
-  // إعداد نصوص وروابط السوشيال ميديا
   const shareUrl = window.location.href;
-  const shareText = `Discover ${product.name} from Nuit Luxury Fragrances.`;
+  const pName = getBilingualValue(product.name, product.name_ar, language);
+  const shareText = t("shareMessage", { name: pName });
   const shareLinks = {
     whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + " " + shareUrl)}`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
     x: `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
   };
 
-  // 🌟 تشيك هل المنتج خلصان من المخزون تماماً
   const isOutOfStock = product.stock === undefined || Number(product.stock) <= 0;
 
   return (
@@ -95,9 +102,9 @@ useEffect(() => {
       <div className="px-8 lg:px-20 mb-8">
         <button
           onClick={() => navigate("/shop")}
-          className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 cursor-pointer"
+          className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 cursor-pointer font-semibold"
         >
-          ← Back to Collection
+          {language === "ar" ? "← العودة إلى المجموعة" : "← Back to Collection"}
         </button>
       </div>
 
@@ -105,19 +112,18 @@ useEffect(() => {
         {/* Image */}
         <div className="relative">
           <div className="aspect-[4/5] bg-secondary overflow-hidden">
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+            <img src={product.image} alt={pName} className="w-full h-full object-cover" />
           </div>
           
-          {/* 🌟 شارة راقية تظهر على الصورة لو المنتج خلصان */}
           {isOutOfStock && (
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
               <span className="bg-[#0c0c0c]/90 text-white/90 border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.3em] font-light">
-                Sold Out
+                {t("outOfStock")}
               </span>
             </div>
           )}
 
-          <div className="absolute top-6 left-6 flex flex-col gap-2">
+          <div className="absolute top-6 left-6 right-6 flex flex-wrap gap-2 pointer-events-none">
             {product.notes?.slice(0, 3).map((note) => (
               <span key={note} className="text-[8px] tracking-widest uppercase bg-background/80 backdrop-blur-sm text-muted-foreground px-2.5 py-1 border border-border">
                 {note}
@@ -127,43 +133,25 @@ useEffect(() => {
         </div>
 
         {/* Details */}
-        <div className="flex flex-col justify-center lg:py-8">
+        <div className="flex flex-col justify-center lg:py-8 text-left rtl:text-right">
           <p className="text-[11px] tracking-[0.45em] uppercase text-primary mb-4">
-            {product.category} · {product.size} 
+            {translateCategory(product.category)} · {product.size} 
           </p>
           <h1 className="text-5xl lg:text-6xl font-light text-foreground mb-2" style={serif}>
-            {product.name}
+            {pName}
           </h1>
           <p className="text-muted-foreground italic mb-8 text-lg font-light" style={serif}>
             {product.tagline}
           </p>
           <p className="text-foreground/75 leading-relaxed mb-10 text-sm font-light" style={serif}>
-            {product.description}
+            {getBilingualValue(product.description, product.description_ar, language)}
           </p>
-
-          {/* Fragrance Pyramid
-          <div className="mb-10">
-            <p className="text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-4">Fragrance Pyramid</p>
-            <div className="space-y-2">
-              {[
-                { label: "Top",      note: product.notes?.[0] },
-                { label: "Heart",    note: product.notes?.[1] },
-                { label: "Base",     note: product.notes?.[2] },
-                ...(product.notes?.[3] ? [{ label: "Dry-down", note: product.notes[3] }] : []),
-              ].map(({ label, note }) => (
-                <div key={label} className="flex items-center gap-4">
-                  <span className="text-[11px] tracking-widest uppercase text-muted-foreground w-16">{label}</span>
-                  <div className="flex-1 h-px bg-border" />
-                  <span className="text-xs text-foreground/80">{note || "Not specified"}</span>
-                </div>
-              ))}
-            </div>
-          </div> */}
 
           <div className="border-t border-border pt-8 mb-6">
             <div className="flex items-baseline justify-between mb-6">
-              <p className="text-3xl font-light text-foreground" style={sans}>
-                EGP {product.price}
+              <p className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
+                              style={{ fontFamily: "'Playfair Display', serif", color: "#313c45" }}>
+                {formatPrice(product.price, language)}
               </p>
               <p className="text-[10px] text-muted-foreground tracking-wider">
                 {product.size} Eau de Parfum
@@ -172,10 +160,9 @@ useEffect(() => {
 
             {/* Qty */}
             <div className="flex items-center gap-5 mb-6">
-              <p className="text-[11px] tracking-[0.22em] uppercase text-muted-foreground">Qty</p>
+              <p className="text-[11px] tracking-[0.22em] uppercase text-muted-foreground">{t("qty")}</p>
               <div className="flex items-center border border-border">
                 <button
-                  // 🌟 منع تقليل الكمية تحت 1، وقفل الزرار لو خلصان
                   onClick={() => setQty(Math.max(1, qty - 1))}
                   disabled={isOutOfStock}
                   className="px-4 py-2.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-30"
@@ -183,13 +170,11 @@ useEffect(() => {
                   <Minus size={11} />
                 </button>
                 
-                {/* 🌟 عرض صفر لو خلصان، غير كده يعرض الكمية الحالية */}
                 <span className="px-5 text-sm text-foreground">
                   {isOutOfStock ? 0 : qty}
                 </span>
                 
                 <button
-                  // 🌟 تزويد الكمية بشرط متعديش كمية المخزون الفعلي المتاحة
                   onClick={() => setQty(prev => (product.stock && prev >= product.stock) ? prev : prev + 1)}
                   disabled={isOutOfStock || (product.stock !== undefined && qty >= product.stock)}
                   className="px-4 py-2.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-30"
@@ -200,30 +185,29 @@ useEffect(() => {
             </div>
 
             <div className="flex gap-3">
-              {/* 🌟 التحكم في شكل وحالة زرار الإضافة على حسب المخزون */}
               {isOutOfStock ? (
                 <button
                   disabled
                   className="flex-1 bg-zinc-800 text-zinc-500 border border-zinc-700/30 text-[10px] tracking-[0.25em] uppercase py-4 cursor-not-allowed"
                 >
-                  Sold Out · نفد من المخزون
+                  {language === "ar" ? "نفد من المخزون" : "Sold Out"}
                 </button>
               ) : (
                 <button
-  onClick={() => {
-    addToCart(product, qty);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 3000);
-  }}
-  disabled={added}
-  className={`flex-1 text-[10px] tracking-[0.25em] uppercase py-4 transition-colors cursor-pointer ${
-    added
-      ? "bg-emerald-700 text-white cursor-not-allowed"
-      : "bg-primary text-primary-foreground hover:bg-primary/85"
-  }`}
->
-  {added ? "Added ✓" : "Add to Cart"}
-</button>
+                  onClick={() => {
+                    addToCart(product, qty);
+                    setAdded(true);
+                    setTimeout(() => setAdded(false), 3000);
+                  }}
+                  disabled={added}
+                  className={`flex-1 text-[10px] tracking-[0.25em] uppercase py-4 transition-colors cursor-pointer ${
+                    added
+                      ? "bg-emerald-700 text-white cursor-not-allowed"
+                      : "bg-primary text-primary-foreground hover:bg-primary/85"
+                  }`}
+                >
+                  {added ? (language === "ar" ? "تمت الإضافة ✓" : "Added ✓") : t("addToCart")}
+                </button>
               )}
 
               <button
@@ -238,12 +222,15 @@ useEffect(() => {
           </div>
 
           <p className="text-[10px] text-muted-foreground leading-relaxed font-light mb-6">
-            Each bottle is carefully packed in our signature packaging to ensure safe delivery. Includes a product care card and complimentary perfume samples with every order.
+            {language === "ar" 
+              ? "يتم تعبئة كل زجاجة بعناية في عبواتنا المميزة لضمان سلامة التوصيل. تتضمن بطاقة العناية بالمنتج وعينات عطور مجانية مع كل طلب."
+              : "Each bottle is carefully packed in our signature packaging to ensure safe delivery. Includes a product care card and complimentary perfume samples with every order."
+            }
           </p>
 
-          {/* ─── ميزة الـ Share والمشاركة المضافة ─── */}
+          {/* Share */}
           <div className="border-t border-border/30 pt-5 flex flex-wrap items-center gap-4 text-[10px] tracking-[0.15em] uppercase text-muted-foreground font-light">
-            <span>Share This Creation:</span>
+            <span>{language === "ar" ? "مشاركة هذا الابتكار:" : "Share This Creation:"}</span>
             
             <div className="flex items-center gap-3.5">
               {/* Facebook */}
@@ -259,7 +246,7 @@ useEffect(() => {
                 </svg>
               </a>
 
-              {/* X (Twitter) */}
+              {/* X */}
               <a
                 href={shareLinks.x}
                 target="_blank"
@@ -285,7 +272,7 @@ useEffect(() => {
                 </svg>
               </a>
 
-              {/* Copy Link Button */}
+              {/* Copy Link */}
               <button
                 onClick={handleCopyLink}
                 className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer p-1"
@@ -294,44 +281,54 @@ useEffect(() => {
                 {copied ? (
                   <>
                     <Check size={11} className="text-emerald-600" />
-                    <span className="text-[9px] text-emerald-600 normal-case tracking-normal font-medium">Copied!</span>
+                    <span className="text-[9px] text-emerald-600 normal-case tracking-normal font-medium">
+                      {language === "ar" ? "تم النسخ!" : "Copied!"}
+                    </span>
                   </>
                 ) : (
                   <>
                     <Link2 size={11} />
-                    <span className="text-[9px] normal-case tracking-normal">Copy link</span>
+                    <span className="text-[9px] normal-case tracking-normal">
+                      {language === "ar" ? "نسخ الرابط" : "Copy link"}
+                    </span>
                   </>
                 )}
               </button>
             </div>
           </div>
-
         </div>
       </div>
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
-        <section className="bg-secondary border-t border-border px-8 lg:px-20 py-20">
-          <h2 className="text-2xl font-light text-foreground mb-12" style={serif}>You may also like</h2>
+        <section className="bg-secondary border-t border-border px-8 lg:px-20 py-20 text-left rtl:text-right">
+          <h2 className="text-2xl font-light text-foreground mb-12" style={serif}>
+            {t("relatedProducts")}
+          </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((p) => (
-              <div
-                key={p.id}
-                className="group cursor-pointer"
-                onClick={() => {
-                  navigate(`/product/${p.id}`);
-                  window.scrollTo(0, 0);
-                }}
-              >
-                <div className="aspect-[3/4] bg-background overflow-hidden mb-4">
-                  <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            {relatedProducts.map((p) => {
+              const rpName = getBilingualValue(p.name, p.name_ar, language);
+              return (
+                <div
+                  key={p.id}
+                  className="group cursor-pointer"
+                  onClick={() => {
+                    navigate(`/product/${p.id}`);
+                    window.scrollTo(0, 0);
+                  }}
+                >
+                  <div className="aspect-[3/4] bg-background overflow-hidden mb-4 border border-border/30">
+                    <img src={p.image} alt={rpName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  </div>
+                  <p className="text-sm text-foreground font-light" style={serif}>{rpName}</p>
+                  <p className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
+                           style={{ fontFamily: "'Playfair Display', serif", color: "#313c45" }}
+                  >
+                    {formatPrice(p.price, language)}
+                  </p>
                 </div>
-                <p className="text-sm text-foreground font-light" style={serif}>{p.name}</p>
-                <p className="text-base font-light tracking-wider text-foreground" style={sans}>
-                  EGP {p.price}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}

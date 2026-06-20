@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Product, CartItem } from "../types";
-import { getProducts, getDBCart, syncDBCart } from "../services/api";
+import { getProducts, getDBCart, syncDBCart, getDBWishlist, syncDBWishlist } from "../services/api";
 
 // ─── DB Cart Item shape returned by the API ───────────────────
 interface DBCartItem {
@@ -10,8 +10,9 @@ interface DBCartItem {
   product: Product;
 }
 
-// ─── Debounce timer for syncWithDB ────────────────────────────
+// ─── Debounce timers ──────────────────────────────────────────
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
+let wishSyncTimer: ReturnType<typeof setTimeout> | null = null;
 const SYNC_DEBOUNCE_MS = 600;
 
 // ─── Product cache TTL ────────────────────────────────────────
@@ -32,8 +33,11 @@ interface CartStoreState {
   updateQty: (productId: number, quantity: number) => void;
   toggleWish: (productId: number) => void;
   clearCart: (skipSync?: boolean) => void;
+  clearWishlist: () => void;
   syncWithDB: () => Promise<void>;
+  syncWishlistWithDB: () => Promise<void>;
   loadFromDB: () => Promise<void>;
+  loadWishlistFromDB: () => Promise<void>;
 }
 
 /**
@@ -44,6 +48,13 @@ function debouncedSync(get: () => CartStoreState) {
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
     get().syncWithDB();
+  }, SYNC_DEBOUNCE_MS);
+}
+
+function debouncedWishSync(get: () => CartStoreState) {
+  if (wishSyncTimer) clearTimeout(wishSyncTimer);
+  wishSyncTimer = setTimeout(() => {
+    get().syncWishlistWithDB();
   }, SYNC_DEBOUNCE_MS);
 }
 
@@ -71,7 +82,13 @@ export const useCartStore = create<CartStoreState>()(
         try {
           set({ loading: true, error: null });
           const products = await getProducts();
-          set({ products, productsLoadedAt: Date.now() });
+          
+          // Prune any stale IDs from wishlisted list that do not exist in database
+          const cleanWishlisted = state.wishlisted.filter((id) =>
+            products.some((p) => p.id === id)
+          );
+          
+          set({ products, wishlisted: cleanWishlisted, productsLoadedAt: Date.now() });
         } catch (err) {
           console.error("Failed to fetch products:", err);
           set({ error: "Unable to load the collection. Please try again later." });
@@ -128,6 +145,7 @@ export const useCartStore = create<CartStoreState>()(
               : [...state.wishlisted, productId],
           };
         });
+        debouncedWishSync(get);
       },
 
       clearCart: (skipSync = false) => {
@@ -139,6 +157,14 @@ export const useCartStore = create<CartStoreState>()(
         }
         if (!skipSync) {
           get().syncWithDB(); // immediate, no debounce — this is intentional
+        }
+      },
+
+      clearWishlist: () => {
+        set({ wishlisted: [] });
+        if (wishSyncTimer) {
+          clearTimeout(wishSyncTimer);
+          wishSyncTimer = null;
         }
       },
 
@@ -183,7 +209,47 @@ export const useCartStore = create<CartStoreState>()(
         } finally {
           set({ loading: false });
         }
-      }
+      },
+
+      syncWishlistWithDB: async () => {
+        try {
+          const token = typeof window !== "undefined"
+            ? localStorage.getItem("nuit_auth_token")
+            : null;
+          if (!token) return;
+
+          const ids = get().wishlisted;
+          await syncDBWishlist(ids);
+        } catch (err) {
+          console.error("Wishlist sync with DB failed:", err);
+        }
+      },
+
+      loadWishlistFromDB: async () => {
+        try {
+          const token = typeof window !== "undefined"
+            ? localStorage.getItem("nuit_auth_token")
+            : null;
+          if (!token) return;
+
+          // Merge: local guest wishlist IDs + DB wishlist IDs, push merged set to DB
+          const localIds = get().wishlisted;
+          const dbProducts = await getDBWishlist();
+          const dbIds = dbProducts.map((p) => p.id);
+
+          // Union of both lists (guest + DB), deduped
+          const merged = Array.from(new Set([...localIds, ...dbIds]));
+
+          if (merged.length !== dbIds.length || localIds.some((id) => !dbIds.includes(id))) {
+            // Local has items not in DB → push merged list to DB
+            await syncDBWishlist(merged);
+          }
+
+          set({ wishlisted: merged });
+        } catch (err) {
+          console.error("Failed to load wishlist from DB:", err);
+        }
+      },
     }),
     {
       name: "nuit-cart-storage",

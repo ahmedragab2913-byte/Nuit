@@ -1,38 +1,69 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-size: 18px;
+  --font-size: 20px;
   
-  /* خلفية فاتحة جداً ونضيفة تبرز صور المنتجات */
-  --background: #E8E2D8;             /* 👈 الأبيض الثلجي النظيف */
-  --foreground: #374653;             /* النصوص بالكحلي الداكن عشان التباين */
+  /* ❄️ الخلفية الأساسية: مأخوذة من درجة Pale Snow (#d5dbe2) بس مصفية سيكا عشان تدي أرضية ثلجية فاتحة ومشرقة جداً */
+  --background: #edf1f4; 
   
-  /* الكروت والخلفيات الثانوية */
-  --card: #ffffff;                   
-  --card-foreground: #374653;
+  /* 🖤 النص الأساسي: مأخوذ من الدرجة الأولى Charcoal Mist (#313c45) - رمادي فحم داكن جداً ومريح للعين بتباين مثالي */
+  --foreground: #313c45;
+  
+  /* ❄️ الكروت: أبيض ناصع زي الثلج الصافي عشان صور زجاجات العطور تبرز وتلمع فوق الخلفية */
+  --card: #ffffff; 
+  --card-foreground: #313c45;
+  
+  /* ❄️ الـ Popovers والقوائم المنسدلة */
   --popover: #ffffff;
-  --popover-foreground: #374653;
+  --popover-foreground: #313c45;
+
+  /* 💎 اللون الأساسي (Primary): مأخوذ من درجة Muted Steel Blue (#4f6271) - أزرق فولاذي فاخر جداً للأزرار والعناصر النشطة */
+  --primary: #4f6271;
+  --primary-foreground: #ffffff;
   
-  /* الأزرار والعناصر الرئيسية */
-  --primary: #998C73;                /* الذهبي المطفي الرملي للأزرار */
-  --primary-foreground: #ffffff;     /* كتابة بيضاء داخل الزر */
+  /* ⚙️ العناصر الثانوية: مأخوذة من درجة Iced Blue (#778ca4) للفلترة والأزرار الفرعية */
+  --secondary: #d5dbe2; 
+  --secondary-foreground: #313c45;
   
-  /* العناصر الثانوية والنصوص الفرعية */
-  --secondary: #ffffff;              
-  --secondary-foreground: #374653;
-  --muted: #f4f8f6;                  
-  --muted-foreground: #627281;       /* رمادي أزرق مريح للقراءة */
+  /* 💬 النصوص الفرعية والمكتومة: مأخوذة من درجة Clouded Steel (#b3bfcb) بتناغم ناعم */
+  --muted: #e4e9ee; 
+  --muted-foreground: #778ca4;
   
-  --accent: #998C73;                 
-  --accent-foreground: #ffffff;
+  --accent: #4f6271;
+  --accent-foreground: #ffffff; 
   
-  --destructive: #b03a3a;
+  /* 🛑 أحمر بارد مائل للوردي يتناسب مع المود الثلجي */
+  --destructive: #c94a4a;
   --destructive-foreground: #ffffff;
+
+  /* ✨ حدود حادة ونظيفة جداً مأخوذة من روح درجات الرمادي المزرق */
+  --border: rgba(79, 98, 113, 0.15);
   
-  /* الحدود والفواصل */
-  --border: rgba(55, 70, 83, 0.15);  /* فواصل ناعمة جداً من الكحلي */
   --input: transparent;
-  --ring: rgba(153, 140, 115, 0.4);
+  /* 📥 حقول الإدخال */
+  --input-background: #f5f7f9; 
+  --switch-background: #cbd5e1;
+  
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: rgba(79, 98, 113, 0.4);
+  
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.0625rem;
+  
+  /* ❄️ السايدبار: مشرق ومستوحى من بياض الثلج والنقاء النورديك */
+  --sidebar: #ffffff; 
+  --sidebar-foreground: #313c45;
+  --sidebar-primary: #4f6271;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #edf1f4;
+  --sidebar-accent-foreground: #4f6271;
+  --sidebar-border: rgba(79, 98, 113, 0.12);
+  --sidebar-ring: rgba(79, 98, 113, 0.4);
 }
 
 /* توحيد الدرجة */
@@ -148,3 +179,19 @@
     line-height: 1.5;
   }
 }
+
+
+/* ─── Arabic Language RTL & Font Overrides ─── */
+/* html[lang="ar"],
+html[lang="ar"] body {
+  font-family: 'Tajawal', sans-serif !important;
+} */
+
+/* 👈 استثناء صريح للوجو: يمنع خط تجوال من تدمير الفونت الإنجليزي لكلمة Nuit */
+/* html[lang="ar"] [style*="Playfair Display"]:not(.logo-font) {
+  font-family: 'Tajawal', sans-serif !important;
+}
+
+html[lang="ar"] [style*="Raleway"] {
+  font-family: 'Tajawal', sans-serif !important;
+} */

@@ -10,6 +10,7 @@ export interface Product {
   published: boolean;
   sku?: string;
   description?: string;
+  description_ar?: string;
   notes: string[];
   tagline?: string;
   size?: string;
@@ -41,14 +42,42 @@ export interface Customer {
   status: "vip" | "regular" | "new";
 }
 
+/** Shape returned by GET /api/v1/dashboard/stats */
+export interface TopProductStat {
+  id: number;
+  name: string;
+  price: number;
+  image?: string | null;
+  sales?: number | null;
+  category?: string;
+}
+
+export interface RevenueChartPoint {
+  month: number; // 1–12
+  total: number;
+}
+
+export interface RecentOrderStat {
+  id: string;
+  customer: string;
+  total: number;
+  status: string;
+  date: string;
+}
+
 export interface DashboardStats {
   revenue: number;
   orders: number;
   products: number;
   customers: number;
-  top_products: Product[];
-  recent_orders: Order[];
-  revenue_chart: { month: number; total: number }[];
+  top_products: TopProductStat[];
+  recent_orders: RecentOrderStat[];
+  revenue_chart: RevenueChartPoint[];
+  category_stats?: {
+    women_pct: number;
+    men_pct: number;
+    unisex_pct: number;
+  };
 }
 
 export interface User {

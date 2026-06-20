@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
 import { Instagram, Facebook, Mail, ShieldCheck, Truck, RotateCcw } from "lucide-react";
+import { useLanguageStore } from "../store/languageStore";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
 const sans = { fontFamily: "'Raleway', sans-serif" };
 
 export default function Footer() {
+  const { t } = useLanguageStore();
+
   return (
     <footer className="bg-background border-t border-border px-6 lg:px-20 pt-16 pb-8" style={sans}>
       <div className="max-w-7xl mx-auto">
@@ -18,10 +21,10 @@ export default function Footer() {
               Nuit
             </h2>
             <p className="text-muted-foreground text-sm font-light leading-relaxed max-w-xs">
-              The art of luxury in every bottle. Seamlessly blending high-end French notes with everyday elegance.
+              {t("brandDesc")}
             </p>
             <div className="mt-2">
-              <p className="text-[11px] tracking-[0.2em] uppercase text-foreground font-medium mb-3">Follow us</p>
+              <p className="text-[11px] tracking-[0.2em] uppercase text-foreground font-medium mb-3">{t("followUs")}</p>
               <div className="flex items-center gap-5 text-muted-foreground">
                 <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
                   <Instagram size={18} />
@@ -42,33 +45,33 @@ export default function Footer() {
           {/* العمود الثاني: روابط هامة للعميل */}
           <div>
             <h3 className="text-[11px] tracking-[0.25em] uppercase text-foreground font-semibold mb-6">
-              Important Links
+              {t("importantLinks")}
             </h3>
             <ul className="space-y-3.5 text-sm font-light text-muted-foreground">
-              <li><Link to="/shop" className="hover:text-primary transition-colors">All Collections</Link></li>
-              <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
-              <li><Link to="/terms-conditions" className="hover:text-primary transition-colors">Terms & Conditions</Link></li>
-              <li><Link to="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/shop" className="hover:text-primary transition-colors">{t("allCollections")}</Link></li>
+              <li><Link to="/about" className="hover:text-primary transition-colors">{t("aboutUs")}</Link></li>
+              <li><Link to="/terms-conditions" className="hover:text-primary transition-colors">{t("termsConditions")}</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-primary transition-colors">{t("privacyPolicy")}</Link></li>
             </ul>
           </div>
 
           {/* العمود الثالث: مزايا المتجر أونلاين */}
           <div>
             <h3 className="text-[11px] tracking-[0.25em] uppercase text-foreground font-semibold mb-6">
-              Why Shop With Us
+              {t("whyShopWithUs")}
             </h3>
             <ul className="space-y-4 text-sm font-light text-muted-foreground">
               <li className="flex items-center gap-3">
                 <Truck size={15} className="text-primary/80" />
-                <span>Fast Delivery Worldwide</span>
+                <span>{t("fastDelivery")}</span>
               </li>
               <li className="flex items-center gap-3">
                 <RotateCcw size={15} className="text-primary/80" />
-                <span>14-Day Easy Returns</span>
+                <span>{t("easyReturns")}</span>
               </li>
               <li className="flex items-center gap-3">
                 <ShieldCheck size={15} className="text-primary/80" />
-                <span>100% Authentic Products</span>
+                <span>{t("authenticProducts")}</span>
               </li>
             </ul>
           </div>
@@ -76,7 +79,7 @@ export default function Footer() {
           {/* العمود الرابع: بيانات الاتصال والـ WhatsApp */}
           <div>
             <h3 className="text-[11px] tracking-[0.25em] uppercase text-foreground font-semibold mb-6">
-              Contact Us
+              {t("contactUs")}
             </h3>
             <ul className="space-y-4 text-sm font-light text-muted-foreground">
               <li className="flex items-center gap-3 group">
@@ -111,10 +114,10 @@ export default function Footer() {
 
         {/* الحقوق السفلى والـ Powered By */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs tracking-wider text-muted-foreground/80">
-          <p>© 2026 Maison Nuit. All rights reserved.</p>
+          <p>{t("rightsReserved")}</p>
           <div className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity">
-            <span>Powered by</span>
-            <span className="font-semibold tracking-widest uppercase text-foreground text-[10px]">Nuit Team</span>
+            <span>{t("poweredBy")}</span>
+            <span className="font-semibold tracking-widest uppercase text-foreground text-[10px]">{t("nuitTeam")}</span>
           </div>
         </div>
 

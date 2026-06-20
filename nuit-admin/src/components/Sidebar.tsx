@@ -4,19 +4,19 @@ import { useAuthStore } from "../store/authStore";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
 
+export const navItems = [
+  { to: "/dashboard", label: "Overview", icon: <LayoutDashboard size={16} />, end: true },
+  { to: "/dashboard/products", label: "Products", icon: <Package size={16} /> },
+  { to: "/dashboard/orders", label: "Orders", icon: <ShoppingCart size={16} /> },
+  { to: "/dashboard/customers", label: "Customers", icon: <Users size={16} /> },
+  { to: "/dashboard/announcements", label: "Announcements", icon: <Megaphone size={16} /> },
+  { to: "/dashboard/shipping-rates", label: "Shipping Rates", icon: <Truck size={16} /> },
+  { to: "/dashboard/promo-codes", label: "Promo Codes", icon: <Ticket size={16} /> },
+];
+
 export default function Sidebar() {
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
-
-  const navItems = [
-    { to: "/dashboard", label: "Overview", icon: <LayoutDashboard size={16} />, end: true },
-    { to: "/dashboard/products", label: "Products", icon: <Package size={16} /> },
-    { to: "/dashboard/orders", label: "Orders", icon: <ShoppingCart size={16} /> },
-    { to: "/dashboard/customers", label: "Customers", icon: <Users size={16} /> },
-    { to: "/dashboard/announcements", label: "Announcements", icon: <Megaphone size={16} /> },
-    { to: "/dashboard/shipping-rates", label: "Shipping Rates", icon: <Truck size={16} /> },
-    { to: "/dashboard/promo-codes", label: "Promo Codes", icon: <Ticket size={16} /> },
-  ];
 
   const handleLogout = async () => {
     await logout();
@@ -24,7 +24,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-56 flex-shrink-0 border-r border-white/5 flex flex-col h-screen sticky top-0" style={{ background: "#0a0a0a" }}>
+    <aside className="hidden lg:flex w-56 flex-shrink-0 border-r border-white/5 flex flex-col h-screen sticky top-0" style={{ background: "#0a0a0a" }}>
       {/* Brand logo */}
       <div className="px-6 py-7 border-b border-white/5">
         <p className="text-[20px] tracking-[0.5em] uppercase text-white font-light" style={serif}>Nuit</p>
@@ -52,9 +52,16 @@ export default function Sidebar() {
 
       {/* Settings & Sign Out */}
       <div className="px-3 py-4 border-t border-white/5 space-y-1">
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 text-[11px] tracking-[0.15em] uppercase text-white/30 hover:text-white/60 transition-colors cursor-pointer">
+        <NavLink
+          to="/dashboard/settings"
+          className={({ isActive }) =>
+            `w-full flex items-center gap-3 px-3 py-2.5 text-[11px] tracking-[0.15em] uppercase transition-colors cursor-pointer ${
+              isActive ? "text-white" : "text-white/30 hover:text-white/60"
+            }`
+          }
+        >
           <Settings size={14} /> Settings
-        </button>
+        </NavLink>
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 text-[11px] tracking-[0.15em] uppercase text-white/30 hover:text-red-400 transition-colors cursor-pointer"

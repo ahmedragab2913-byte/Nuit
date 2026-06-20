@@ -49,6 +49,7 @@ public function index(Request $request): JsonResponse
             'category'    => $p->category,
             'notes'       => $p->notes,
             'description' => $p->description,
+            'description_ar' => $p->description_ar,
             'image'       => $p->image,
             'featured'    => (bool) $p->featured,
             'stock'       => $p->stock,
@@ -67,12 +68,14 @@ public function index(Request $request): JsonResponse
     return response()->json([
         'id'          => $product->id,
         'name'        => $product->name,
+        'name_ar'     => $product->name_ar,
         'tagline'     => $product->tagline,
         'price'       => (float) $product->price,
         'size'        => $product->size,
         'category'    => $product->category,
         'notes'       => $product->notes,
         'description' => $product->description,
+        'description_ar' => $product->description_ar,
         'image'       => $product->image,
         'featured'    => (bool) $product->featured,
         
@@ -88,16 +91,18 @@ public function index(Request $request): JsonResponse
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'        => 'required|string',
-            'tagline'     => 'nullable|string|max:255',
-            'price'       => 'required|numeric',
-            'size'        => 'sometimes|string',
-            'category'    => 'sometimes|string',
-            'notes'       => 'nullable|array',
-            'description' => 'sometimes|string',
-            'image'       => 'nullable|string',
-            'featured'    => 'boolean',
-            'stock'       => 'integer',
+            'name'           => 'required|string',
+            'name_ar'        => 'nullable|string',
+            'tagline'        => 'nullable|string|max:255',
+            'price'          => 'required|numeric',
+            'size'           => 'sometimes|string',
+            'category'       => 'sometimes|string',
+            'notes'          => 'nullable|array',
+            'description'    => 'sometimes|string',
+            'description_ar' => 'nullable|string',
+            'image'          => 'nullable|string',
+            'featured'       => 'boolean',
+            'stock'          => 'integer',
         ]);
 
         $product = Product::create($data);
@@ -107,17 +112,19 @@ public function index(Request $request): JsonResponse
     public function update(Request $request, Product $product): JsonResponse
     {
         $data = $request->validate([
-            'name'        => 'sometimes|string',
-            'tagline'     => 'nullable|string|max:255',
-            'price'       => 'sometimes|numeric',
-            'size'        => 'sometimes|string',
-            'category'    => 'sometimes|string',
-            'notes'       => 'nullable|array',
-            'description' => 'sometimes|string',
-            'image'       => 'nullable|string',
-            'featured'    => 'boolean',
-            'stock'       => 'integer',
-            'published'   => 'boolean',
+            'name'           => 'sometimes|string',
+            'name_ar'        => 'nullable|string',
+            'tagline'        => 'nullable|string|max:255',
+            'price'          => 'sometimes|numeric',
+            'size'           => 'sometimes|string',
+            'category'       => 'sometimes|string',
+            'notes'          => 'nullable|array',
+            'description'    => 'sometimes|string',
+            'description_ar' => 'nullable|string',
+            'image'          => 'nullable|string',
+            'featured'       => 'boolean',
+            'stock'          => 'integer',
+            'published'      => 'boolean',
         ]);
 
         $product->update($data);
@@ -197,12 +204,14 @@ public function newArrivals(): JsonResponse
         ->map(fn($p) => [
             'id'          => $p->id,
             'name'        => $p->name,
+            'name_ar'     => $p->name_ar,
             'tagline'     => $p->tagline,
             'price'       => (float) $p->price,
             'size'        => $p->size,
             'category'    => $p->category,
             'notes'       => $p->notes,
             'description' => $p->description,
+            'description_ar' => $p->description_ar,
             'image'       => $p->image,
             'featured'    => (bool) $p->featured,
             'stock'       => $p->stock,

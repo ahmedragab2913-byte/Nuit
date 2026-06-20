@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { Product, Order, Customer, DashboardStats } from "../types";
 
+// Updated API base configurations
 const hostname = typeof window !== "undefined" ? window.location.hostname : "127.0.0.1";
 // Use Railway production URL if page is loaded from vercel, otherwise fallback to local/detected host
 const isProd = typeof window !== "undefined" && (window.location.hostname.includes("vercel.app") || window.location.hostname.includes("railway.app"));
@@ -8,6 +9,7 @@ const API_BASE = isProd ? "https://nuit-production.up.railway.app/api/v1" : `htt
 
 export const api = axios.create({
   baseURL: API_BASE,
+  withCredentials: true,
   headers: {
     "Accept": "application/json",
   }
@@ -39,9 +41,24 @@ api.interceptors.response.use(
   }
 );
 
+export const extractErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || "A network error occurred.";
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "An unexpected error occurred.";
+};
+
 // ─── CSRF & AUTH SERVICE ───────────────────────────────────
 export const getCsrfCookie = async () => {
-  return Promise.resolve();
+  try {
+    const base = API_BASE.replace("/api/v1", "");
+    await axios.get(`${base}/sanctum/csrf-cookie`, { withCredentials: true });
+  } catch (err) {
+    console.error("CSRF handshake failed:", err);
+  }
 };
 
 export const apiLogin = async (credentials: Record<string, string>) => {
@@ -178,6 +195,11 @@ export const getCustomers = async (): Promise<Customer[]> => {
   return Array.isArray(data) ? data : data.data ?? [];
 };
 
+export const getCustomerDetail = async (id: number): Promise<any> => {
+  const res = await api.get(`/customers/${id}`);
+  return res.data;
+};
+
 // ─── ANNOUNCEMENTS SERVICE ────────────────────────────────
 export interface Announcement {
   id: number;
@@ -278,5 +300,24 @@ export const togglePromoCodeStatus = async (id: number, currentStatus: boolean) 
 
 export const deletePromoCode = async (id: number) => {
   const res = await api.delete(`/admin/promo-codes/${id}`);
+  return res.data;
+};
+
+// ─── ADMIN ACCOUNT SETTINGS SERVICE ───────────────────────
+export const updateAdminProfile = async (data: {
+  name: string;
+  email: string;
+  phone?: string;
+}) => {
+  const res = await api.put("/admin/profile", data);
+  return res.data;
+};
+
+export const updateAdminPassword = async (data: {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}) => {
+  const res = await api.put("/admin/password", data);
   return res.data;
 };

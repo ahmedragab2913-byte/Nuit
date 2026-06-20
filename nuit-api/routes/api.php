@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\ShippingRateController;
 use App\Http\Controllers\Api\PromoCodeController;
 
@@ -52,6 +53,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/cart/add', [CartController::class, 'addToCart']);
         Route::post('/cart/update-qty', [CartController::class, 'updateQty']);
         Route::delete('/cart/remove/{productId}', [CartController::class, 'removeFromCart']);
+
+        // Client Wishlist Management
+        Route::get('/wishlist', [WishlistController::class, 'getWishlist']);
+        Route::post('/wishlist/sync', [WishlistController::class, 'syncWishlist']);
 
         // Client Checkout and Order History
         Route::post('/checkout', [OrderController::class, 'store']);

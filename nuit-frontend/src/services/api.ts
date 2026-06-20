@@ -81,7 +81,8 @@ export const getProducts = async (): Promise<Product[]> => {
 export const getProductswithPagination = async (
   page = 1,
   perPage = 12,
-  category?: string
+  category?: string,
+  search?: string // 👈 ضفنا الـ search parameter هنا كـ اختياري
 ): Promise<{
   data: Product[];
   current_page: number;
@@ -97,6 +98,10 @@ export const getProductswithPagination = async (
     params.append("category", category);
   }
   
+  // 👈 لو فيه كلمة بحث مبعوتة، بنضيفها للـ Query String
+  if (search && search.trim() !== "") {
+    params.append("search", search.trim());
+  }
 
   const res = await api.get(`/products?${params}`);
   const raw = res.data;
@@ -272,4 +277,39 @@ export interface CustomerOrder {
 export const getMyOrders = async (): Promise<CustomerOrder[]> => {
   const res = await api.get("/my-orders");
   return res.data.data ?? [];
+};
+
+// ─── DATABASE WISHLIST PERSISTENCE ───────────────────────────
+/**
+ * Fetch the authenticated user's wishlist from the DB.
+ * Returns an array of Product objects.
+ */
+export const getDBWishlist = async (): Promise<Product[]> => {
+  const res = await api.get("/wishlist");
+  const items = res.data.data ?? res.data ?? [];
+  return items.map((p: any) => ({
+    ...p,
+    notes: Array.isArray(p.notes)
+      ? p.notes
+      : typeof p.notes === "string"
+      ? JSON.parse(p.notes)
+      : [],
+  }));
+};
+
+/**
+ * Syncs the authenticated user's wishlist to the DB.
+ * Accepts an array of product IDs. Returns the updated wishlist products.
+ */
+export const syncDBWishlist = async (productIds: number[]): Promise<Product[]> => {
+  const res = await api.post("/wishlist/sync", { items: productIds });
+  const items = res.data.data ?? res.data ?? [];
+  return items.map((p: any) => ({
+    ...p,
+    notes: Array.isArray(p.notes)
+      ? p.notes
+      : typeof p.notes === "string"
+      ? JSON.parse(p.notes)
+      : [],
+  }));
 };

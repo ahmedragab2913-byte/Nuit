@@ -169,8 +169,9 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
         error: null,
       });
 
-      // 3. Clear local cart with skipSync=true (token is already gone)
+      // 3. Clear local cart and wishlist with skipSync=true (token is already gone)
       useCartStore.getState().clearCart(true /* skipSync */);
+      useCartStore.getState().clearWishlist();
       localStorage.removeItem("nuit-cart-storage");
     }
   },
@@ -290,8 +291,9 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
   clearError: () => set({ error: null }),
 
   setUnauthenticated: () => {
-    // Clear cart without syncing (session is already dead)
+    // Clear cart and wishlist without syncing (session is already dead)
     useCartStore.getState().clearCart(true /* skipSync */);
+    useCartStore.getState().clearWishlist();
     set({
       user: null,
       isAuthenticated: false,

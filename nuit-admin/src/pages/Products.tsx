@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { 
   Plus, Edit, Trash2, Search, Upload, Download, 
-  RefreshCw, X, AlertCircle, ChevronLeft, ChevronRight 
+  X, AlertCircle, ChevronLeft, ChevronRight 
 } from "lucide-react";
 import { useAdminStore } from "../store/adminStore";
+import { getProductImage } from "../services/api"; // 🖼️ استيراد دالة معالجة الصور الذكية
 import type { Product } from "../types";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
@@ -23,6 +24,7 @@ export default function Products() {
     }
     return { en, ar };
   };
+
   const {
     products,
     productsLoading: loading,
@@ -40,14 +42,10 @@ export default function Products() {
     importProductExcel
   } = useAdminStore();
 
-  // Initialise from store so input matches persisted filter on re-mount
   const [search, setSearch] = useState(searchQuery);
-
-  // URL synchronized pagination
   const [searchParams, setSearchParams] = useSearchParams();
   const urlPage = Number(searchParams.get("page")) || 1;
 
-  // Modals & Form State
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -67,26 +65,21 @@ export default function Products() {
   const [published, setPublished] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  // Excel Import State
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Debounce search query updates to the store
   useEffect(() => {
     const handler = setTimeout(() => {
       setProductsFilter(search, categoryFilter);
     }, 400);
-
     return () => clearTimeout(handler);
   }, [search, categoryFilter, setProductsFilter]);
 
-  // Reset page parameter in URL when store filters update
   useEffect(() => {
     setSearchParams({ page: "1" });
   }, [searchQuery, categoryFilter]);
 
-  // Fetch when page, search query, or category filter updates
   useEffect(() => {
     fetchProducts(urlPage, ITEMS_PER_PAGE);
   }, [urlPage, searchQuery, categoryFilter]);
@@ -230,7 +223,6 @@ export default function Products() {
 
   const handleExport = async () => {
     try {
-      // Direct call is fine since it's a file download/export
       const { exportProductsBlob } = await import("../services/api");
       const blob = await exportProductsBlob();
       const url = window.URL.createObjectURL(blob);
@@ -254,17 +246,12 @@ export default function Products() {
           <h1 className="text-2xl font-light text-white tracking-wide" style={serif}>
             Fragrance Formulation Catalog
           </h1>
-          {/* <p className="text-[10px] tracking-[0.2em] uppercase text-white/25 mt-0.5">
-            Fragrance Formulation Catalog · Maison Nuit
-          </p> */}
         </div>
       </div>
 
       {/* Action Bar */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        {/* Search & Category Filter */}
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:max-w-xl">
-          {/* Search */}
           <div className="relative w-full">
             <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25" />
             <input
@@ -275,7 +262,6 @@ export default function Products() {
             />
           </div>
 
-          {/* Category Dropdown */}
           <select
             value={categoryFilter}
             onChange={(e) => {
@@ -291,7 +277,6 @@ export default function Products() {
           </select>
         </div>
 
-        {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="file"
@@ -392,11 +377,13 @@ export default function Products() {
                     <tr key={p.id} className="hover:bg-white/2 transition-colors">
                       <td className="py-4 px-4 flex items-center gap-3">
                         <div className="w-9 h-12 bg-white/5 rounded-xl overflow-hidden flex-shrink-0 border border-white/8">
-                          {p.image ? (
-                            <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-white/5 flex items-center justify-center text-[10px] text-white/25">No Img</div>
-                          )}
+                          {/* ✅ تعديل هنا: استخدام دالة معالجة رابط الصورة */}
+                          <img 
+                            src={getProductImage(p.image)} 
+                            alt={p.name} 
+                            className="w-full h-full object-cover" 
+                            onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-perfume.jpg"; }}
+                          />
                         </div>
                         <div>
                           {(() => {
@@ -458,11 +445,13 @@ export default function Products() {
               >
                 <div className="flex gap-3">
                   <div className="w-16 h-20 bg-white/5 rounded-xl overflow-hidden flex-shrink-0 border border-white/8">
-                    {p.image ? (
-                      <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-white/5 flex items-center justify-center text-[10px] text-white/25">No Img</div>
-                    )}
+                    {/* ✅ تعديل هنا أيضاً: استخدام الدالة في كروت الموبايل */}
+                    <img 
+                      src={getProductImage(p.image)} 
+                      alt={p.name} 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-perfume.jpg"; }}
+                    />
                   </div>
                   <div className="space-y-1">
                     <span className="text-[9px] uppercase tracking-wider bg-white/4 border border-white/8 px-2 py-0.5 rounded-full text-white/60">
@@ -707,57 +696,53 @@ export default function Products() {
                 />
               </div>
 
+              {/* ✅ إكمال الجزء المقطوع من الفورم وإضافة زر الحفظ وتغيير الصورة */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="block text-[9px] tracking-[0.15em] uppercase text-white/35 mb-1.5">Image Portrait</label>
+                  <label className="block text-[9px] tracking-[0.15em] uppercase text-white/35 mb-1.5">Composition Image</label>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                    className="w-full text-xs text-white/40 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border file:border-white/10 file:text-[10px] file:uppercase file:tracking-wider file:font-semibold file:bg-white/4 file:text-white file:hover:bg-white/10 file:cursor-pointer"
+                    className="text-[11px] text-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:uppercase file:tracking-wider file:bg-white/5 file:text-white file:cursor-pointer hover:file:bg-white/10"
                   />
                 </div>
-                
-                <div className="flex items-center gap-6 justify-end pt-3 sm:pt-0">
-                  <label className="flex items-center gap-2 text-[10px] tracking-[0.1em] uppercase text-white/60 cursor-pointer select-none">
+                <div className="flex items-center gap-6 pt-4">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={featured}
                       onChange={(e) => setFeatured(e.target.checked)}
-                      className="accent-[#d4a853] w-4 h-4 rounded border-white/10 bg-white/4 cursor-pointer"
+                      className="accent-[#d4a853]"
                     />
-                    Featured Accord
+                    <span className="text-[10px] uppercase tracking-wider text-white/60">Featured Scent</span>
                   </label>
-                  <label className="flex items-center gap-2 text-[10px] tracking-[0.1em] uppercase text-white/60 cursor-pointer select-none">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={published}
                       onChange={(e) => setPublished(e.target.checked)}
-                      className="accent-[#d4a853] w-4 h-4 rounded border-white/10 bg-white/4 cursor-pointer"
+                      className="accent-[#d4a853]"
                     />
-                    Publish Scent
+                    <span className="text-[10px] uppercase tracking-wider text-white/60">Publish Directly</span>
                   </label>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/4">
+              <div className="pt-4 border-t border-white/4 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="bg-white/4 border border-white/8 text-[10px] tracking-[0.15em] uppercase text-white/50 hover:text-white/80 hover:border-white/20 px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+                  className="bg-white/4 border border-white/8 text-[10px] tracking-[0.15em] uppercase text-white/50 hover:text-white px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="bg-[#d4a853] text-black text-[10px] tracking-[0.2em] uppercase font-semibold px-5 py-2.5 rounded-xl hover:bg-[#e8bb65] transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                  className="bg-[#d4a853] text-black text-[10px] tracking-[0.2em] uppercase font-semibold px-5 py-2.5 rounded-xl hover:bg-[#e8bb65] transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {formLoading && (
-                    <RefreshCw size={12} className="animate-spin text-black" />
-                  )}
-                  {editingId ? "Save Changes" : "Compose"}
+                  {formLoading ? "Saving..." : editingId ? "Update Masterpiece" : "Launch Formulation"}
                 </button>
               </div>
             </form>

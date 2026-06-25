@@ -1,47 +1,121 @@
 import { useState, useEffect } from "react";
 import { useLanguageStore, formatBilingual } from "../store/languageStore";
 
-const BAR_H = 32;
-const NAV_H = 68;
+// ─── Constants ────────────────────────────────────────────────────────────────
+const BAR_H  = 32;   // px — announcement bar height
+const NAV_H  = 68;   // px — nav height; combined into --header-h CSS var
 
+const API_BASE =
+  window.location.hostname === "localhost"
+    ? "http://127.0.0.1:8000/api/v1"
+    : "https://nuit-production.up.railway.app/api/v1";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface RawAnnouncement {
+  text?      : string;
+  content?   : string;
+  is_active? : boolean | number | string;
+  active?    : boolean | number | string;
+}
+
+// ─── Pure helpers (no side-effects) ──────────────────────────────────────────
+function isActive(a: RawAnnouncement): boolean {
+  const v = a.is_active !== undefined ? a.is_active : a.active;
+  return v !== false && v !== 0 && v !== "0";
+}
+
+function getText(a: RawAnnouncement | string): string {
+  return typeof a === "string" ? a : String(a.text || a.content || "");
+}
+
+// ─── Sub-component: one group of items ───────────────────────────────────────
+interface GroupItemsProps {
+  texts    : string[];
+  language : "en" | "ar";
+}
+
+function GroupItems({ texts, language }: GroupItemsProps) {
+  // إذا كان عدد النصوص قليلاً، نكرر المصفوفة داخلياً لملأ عرض الشاشة فوراً ومنع التأخير والفجوات
+  const duplicatedTexts = texts.length < 4 ? [...texts, ...texts, ...texts] : texts;
+
+  return (
+    <div className="flex items-center shrink-0">
+      {duplicatedTexts.map((raw, i) => {
+        const label   = formatBilingual(raw, language);
+        const isArabic = /[\u0600-\u06FF]/.test(label);
+
+        return (
+          <span
+            key={i}
+            className="inline-flex items-center shrink-0"
+            style={{ unicodeBidi: "isolate" }}
+          >
+            {/* ── Label ── */}
+            <span
+              className="
+                px-8
+                text-[12px] font-medium tracking-[0.18em] uppercase
+                text-muted-foreground
+                lining-nums
+              "
+              style={{
+                fontFamily        : language === "ar" ? "'Cairo', sans-serif" : "'Raleway', sans-serif",
+                fontVariantNumeric: "lining-nums",
+                direction         : isArabic ? "rtl" : "ltr",
+                unicodeBidi       : "isolate",
+              }}
+            >
+              {label}
+            </span>
+
+            {/* ── Divider ── */}
+            <span aria-hidden className="text-[9px] text-primary/40 mx-2">
+              ✦
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function AnnouncementBar() {
-  const [texts, setTexts] = useState<string[]>([]);
+  const [texts,  setTexts]  = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
   const { language } = useLanguageStore();
 
-  const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://127.0.0.1:8000/api/v1' 
-    : 'https://nuit-production.up.railway.app/api/v1'; 
-
+  // ── 1. Fetch active announcements ─────────────────────────────────────────
   useEffect(() => {
-    fetch(`${API_BASE}/announcements?t=${new Date().getTime()}`, { credentials: "include" })
+    fetch(`${API_BASE}/announcements?t=${Date.now()}`, { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((resData) => {
-        const items = resData && typeof resData === 'object' && 'data' in resData 
-          ? resData.data 
-          : (Array.isArray(resData) ? resData : []);
-        
-        const result: string[] = Array.isArray(items) 
-          ? items
-              .filter((a: any) => {
-                if (!a) return false;
-                if (typeof a === "string") return true;
-                const isActiveValue = a.is_active !== undefined ? a.is_active : a.active;
-                return isActiveValue !== false && isActiveValue !== 0 && isActiveValue !== "0";
-              })
-              .map((a: any) => typeof a === "string" ? a : String(a.text || a.content || ""))
-              .filter((text: string) => text.trim() !== "")
-          : [];
+      .then((payload) => {
+        const raw: (RawAnnouncement | string)[] =
+          payload && typeof payload === "object" && "data" in payload
+            ? payload.data
+            : Array.isArray(payload)
+            ? payload
+            : [];
 
-        setTexts(result);
+        const clean = raw
+          .filter((a) => {
+            if (!a) return false;
+            if (typeof a === "string") return a.trim() !== "";
+            return isActive(a);
+          })
+          .map(getText)
+          .filter((t) => t.trim() !== "");
+
+        setTexts(clean);
       })
-      .catch((err) => console.error("Announcement Error:", err))
+      .catch((err) => console.error("[AnnouncementBar]", err))
       .finally(() => setLoaded(true));
-  }, [API_BASE]);
+  }, []);
 
+  // ── 2. Keep --header-h in sync ─────────────────────────────────────────────
   useEffect(() => {
     const h = loaded && texts.length > 0 ? BAR_H + NAV_H : NAV_H;
     document.documentElement.style.setProperty("--header-h", `${h}px`);
@@ -49,101 +123,44 @@ export default function AnnouncementBar() {
 
   if (!loaded || texts.length === 0) return null;
 
-  // مكون المجموعة: يحتوي على النصوص مكررة بجانب بعضها لملء عرض الشاشة
-  const PromoItemsGroup = () => (
-    <div className="promo-group">
-      {/* نكرر العناصر لملء المساحة إذا كان عدد الإعلانات قليلاً */}
-      {[...texts, ...texts].map((text, index) => {
-        const parsedText = formatBilingual(text, language);
-        const isArabic = /[\u0600-\u06FF]/.test(parsedText);
-        return (
-          <div key={index} className="promo-item-wrapper">
-            <span className={`promo-item ${isArabic ? "arabic-text" : ""}`}>
-              {parsedText}
-            </span>
-            <span className="promo-divider">✦</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-
   return (
-    <>
-      <style>{`
-        @keyframes promo-ticker {
-          /* التحرك بمقدار -100% يضمن اختفاء المجموعة الأولى تماماً يساراً وظهور التانية يميناً */
-          from { transform: translate3d(0, 0, 0); }
-          to   { transform: translate3d(-100%, 0, 0); }
-        }
-        
-        .promo-container {
-          width: 100%;
-          height: ${BAR_H}px;
-          background-color: #262f37; /* التيمة الباردة الفخمة */
-          overflow: hidden;
-          border-bottom: 1px solid rgba(79, 98, 113, 0.15);
-          position: relative;
-          direction: ltr;
-        }
-        
-        .promo-track {
-          display: inline-flex;
-          width: max-content;
-          animation: promo-ticker 60s linear infinite; /* وقت مثالي للحركة الطويلة المستمرة */
-          will-change: transform;
-        }
-        
-        .promo-group {
-          display: flex;
-          align-items: center;
-          justify-content: space-around;
-          white-space: nowrap;
-          flex-shrink: 0;
-          min-width: 100vw; /* تجبر المجموعات أن تأخذ كامل عرض الشاشة على الأقل لمنع ظهور فراغات */
-          padding-right: 2rem;
-        }
+    <div
+      role="region"
+      aria-label="Site announcements"
+      className="group relative w-full overflow-hidden select-none bg-muted border-b border-border"
+      style={{ height: BAR_H }}
+    >
+      {/* ── Left edge fade ──────────────────────────────────────────────── */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16
+                   bg-gradient-to-r from-muted to-transparent"
+      />
 
-        .promo-item-wrapper {
-          display: flex;
-          align-items: center;
-        }
-        
-        .promo-item {
-          display: inline-flex;
-          align-items: center;
-          font-size: 11px;
-          letter-spacing: 0.12em;
-          color: #edf1f4; 
-          font-family: 'Raleway', 'Cairo', sans-serif;
-          font-weight: 400;
-          padding: 0 2rem;
-        }
-        
-        .promo-divider {
-          color: #778ca4; 
-          opacity: 0.7;
-        }
-        
-        .arabic-text {
-          direction: rtl;
-          unicode-bidi: isolate;
-        }
-      `}</style>
+      {/* ── Right edge fade ─────────────────────────────────────────────── */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16
+                   bg-gradient-to-l from-muted to-transparent"
+      />
 
-      <div className="promo-container">
-        {/* التظليل الجانبي المتناسق مع تيمة موقع Nuit */}
-        <div style={{
-          position: "absolute", inset: "0 0 0 0", zIndex: 2, pointerEvents: "none",
-          background: "linear-gradient(to right, #262f37 0%, transparent 5%, transparent 95%, #262f37 100%)",
-        }} />
+      {/* 
+        ── Scrolling track ─────────────────────────────────────────────────
+        تم إزالة ريفيرس حركة الـ CSS والاعتماد على حركة خطية موحدة ومستمرة (ltr بملء الشاشة)، 
+        لتجنب قفزات وحسابات الـ Viewport العكسية في العربي.
+      */}
+      <div
+        className="absolute inset-y-0 flex items-center animate-nuit-marquee group-hover:[animation-play-state:paused]"
+        style={{ direction: "ltr" }}
+      >
+        {/* Group A — primary content */}
+        <GroupItems texts={texts} language={language} />
 
-        <div className="promo-track">
-          {/* مجموعتين عريضتين يسلمان بعضهما البعض على أطراف الشاشة */}
-          <PromoItemsGroup />
-          <PromoItemsGroup />
+        {/* Group B — seamless clone */}
+        <div aria-hidden className="flex items-center">
+          <GroupItems texts={texts} language={language} />
         </div>
       </div>
-    </>
+    </div>
   );
 }

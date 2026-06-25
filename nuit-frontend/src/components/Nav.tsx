@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingBag, Menu, X, Search, ChevronDown, User, Globe, Heart } from "lucide-react";
+import { ShoppingBag, Menu, X, Search, ChevronDown, User, Globe, Heart, Sun, Moon } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore } from "../store/authStore";
 import { useLanguageStore } from "../store/languageStore";
@@ -13,6 +13,7 @@ export default function Nav() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   const [visibleCount, setVisibleCount] = useState(6);
 
@@ -31,9 +32,33 @@ export default function Nav() {
   const { isAuthenticated, checkAuth } = useAuthStore();
   const { language, setLanguage, t } = useLanguageStore();
 
+  // 1. إدارة تفضيل الـ Dark Mode عند التحميل والتغيير
   useEffect(() => {
     checkAuth();
+    
+    const isDark = 
+      localStorage.getItem("theme") === "dark" || 
+      (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    
+    setDarkMode(isDark);
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, [checkAuth]);
+
+  const toggleTheme = () => {
+    if (darkMode) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+      setDarkMode(false);
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+      setDarkMode(true);
+    }
+  };
 
   const allLinks = [
     { name: t("home"), path: "/" },
@@ -59,8 +84,7 @@ export default function Nav() {
       if (!navRef.current) return;
 
       const navWidth = navRef.current.offsetWidth;
-      // مسافة الأمان لحماية السنتر تمنع تداخل العناصر مع اللوجو نهائياً
-      const availableWidth = (navWidth / 2) - 160;
+      const availableWidth = (navWidth / 2) - 180; // تم زيادة المساحة قليلاً لاستيعاب زر التبديل الجديد
 
       const widths = getLinkWidths();
       let accumulatedWidth = 0;
@@ -122,6 +146,7 @@ export default function Nav() {
     if (searchQuery.trim()) {
       navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchOpen(false);
+      setMenuOpen(false);
       setSearchQuery("");
     }
   };
@@ -131,10 +156,10 @@ export default function Nav() {
       <nav
         ref={navRef}
         dir={language === "ar" ? "rtl" : "ltr"}
-        className="left-0 right-0 z-50 flex items-center justify-between px-6 xl:px-12 py-5 border-b border-border bg-background/90 backdrop-blur-md relative"
+        className="left-0 right-0 z-50 flex items-center justify-between px-6 xl:px-12 py-5 border-b border-border bg-background/90 backdrop-blur-md relative transition-colors duration-300"
         style={sans}
       >
-        {/* 1. بلوك القائمة: يأخذ flex-1 لضمان بقائه في حيز نصف الشاشة بالتبادل طبقاً لاتجاه اللغة */}
+        {/* 1. بلوك القائمة */}
         <div className={`flex items-center flex-1 ${language === "ar" ? "justify-start" : "justify-start"}`}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -166,7 +191,7 @@ export default function Nav() {
               {overflowLinks.length > 0 && (
                 <div 
                   className={`relative cursor-pointer py-1 flex items-center gap-1 transition-colors whitespace-nowrap flex-shrink-0 ${
-                    language === "ar" ? "text-[12px] font-medium tracking-normal" : "text-[10px] tracking-[0.2em] uppercase"
+                    language === "ar" ? "text-[12px] font-medium tracking-normal" : "text-[10px] tracking-[0.2em] uppercase lining-nums"
                   }`}
                   onClick={() => setIsMoreOpen(!isMoreOpen)}
                   onMouseLeave={() => setIsMoreOpen(false)} 
@@ -204,58 +229,74 @@ export default function Nav() {
           )}
         </div>
 
-        {/* 2. اللوجو: معزول تماماً ومثبت بالمنتصف المطلق للهيدر بغض النظر عن اتجاه النصوص */}
+        {/* 2. اللوجو (مع عزل الفونت لمنع تأثره بخط تجوال في العربي) */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-shrink-0 z-10 pointer-events-none">
-  <Link
-    to="/"
-    dir="ltr"
-    className="block pointer-events-auto select-none"
-  >
-    <span 
-      className="text-foreground logo-font" /* 👈 ضفنا كلاس logo-font هنا عشان يهرب من مقصلة الـ CSS */
-      style={{ 
-        fontFamily: "'Playfair Display', serif", 
-        fontWeight: 300, 
-        letterSpacing: '0.45em',
-        textTransform: 'uppercase',
-        fontSize: '22px'
-      }}
-    >
-      Nuit
-    </span>
-  </Link>
-</div>
+          <Link
+            to="/"
+            dir="ltr"
+            className="block pointer-events-auto select-none"
+          >
+            <span 
+              className="text-foreground logo-font"
+              style={{ 
+                fontFamily: "'Playfair Display', serif", 
+                fontWeight: 300, 
+                letterSpacing: '0.45em',
+                textTransform: 'uppercase',
+                fontSize: '22px'
+              }}
+            >
+              Nuit
+            </span>
+          </Link>
+        </div>
 
-        {/* 3. بلوك الأيقونات وأدوات التحكم: مضاف إليه flex-1 و justify-end ليدفع العناصر لأطراف الشاشة المقابلة ديناميكياً */}
-        <div className="flex items-center gap-4 xl:gap-5 z-20 flex-1 justify-end">
+        {/* 3. بلوك الأيقونات وأدوات التحكم */}
+        <div className="flex items-center gap-3 xl:gap-4 z-20 flex-1 justify-end">
+          
+          {/* 🌗 زر تبديل الـ Dark Mode (جديد) */}
+          <button
+            onClick={toggleTheme}
+            className="text-muted-foreground hover:text-foreground p-1.5 transition-colors rounded-sm cursor-pointer focus:outline-none border border-transparent hover:border-border/20"
+            aria-label="Toggle theme"
+          >
+            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
+          {/* زرار اللغة - يختفي في الموبايل */}
           <button
             onClick={() => setLanguage(language === "en" ? "ar" : "en")}
-            className="flex items-center gap-1 text-[10px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground font-medium px-2 py-1 transition-colors border border-border/20 hover:border-border/60 rounded-sm cursor-pointer focus:outline-none"
+            className="hidden md:flex items-center gap-1 text-[10px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground font-medium px-2 py-1.5 transition-colors border border-border/20 hover:border-border/60 rounded-sm cursor-pointer focus:outline-none"
             style={sans}
           >
             <Globe size={11} />
             <span>{language === "en" ? "عربي" : "EN"}</span>
           </button>
 
-          <button onClick={() => setIsSearchOpen(true)} className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus:outline-none">
+          {/* زرار البحث */}
+          <button onClick={() => setIsSearchOpen(true)} className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus:outline-none p-1">
             <Search size={17} />
           </button>
 
-          <Link to={isAuthenticated ? "/profile" : "/login"} className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link to={isAuthenticated ? "/profile" : "/login"} className="text-muted-foreground hover:text-foreground transition-colors p-1">
             <User size={17} />
           </Link>
-          <Link to="/wishlist" className="relative text-muted-foreground hover:text-foreground transition-colors">
+
+          {/* زرار الـ Wishlist */}
+          <Link to="/wishlist" className="hidden md:block relative text-muted-foreground hover:text-foreground transition-colors p-1">
             <Heart size={17} />
             {wishCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[11px] rounded-full w-4 h-4 flex items-center justify-center font-medium">
+              <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-semibold">
                 {wishCount}
               </span>
             )}
           </Link>
-          <Link to="/cart" className="relative text-muted-foreground hover:text-foreground transition-colors">
+
+          {/* زرار الـ Cart */}
+          <Link to="/cart" className="relative text-muted-foreground hover:text-foreground transition-colors p-1">
             <ShoppingBag size={17} />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[11px] rounded-full w-4 h-4 flex items-center justify-center font-medium">
+              <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-semibold">
                 {cartCount}
               </span>
             )}
@@ -265,7 +306,10 @@ export default function Nav() {
 
       {/* الموبايل والـ Overlays */}
       {(menuOpen || visibleCount === 0) && menuOpen && (
-        <div className="fixed inset-0 z-40 bg-background/97 backdrop-blur-xl flex flex-col items-center justify-center gap-5 overflow-y-auto pt-24 pb-8">
+        <div 
+          className="fixed inset-0 z-40 bg-background/97 backdrop-blur-xl flex flex-col items-center justify-start gap-5 overflow-y-auto pt-24 pb-8 px-6 transition-colors duration-300"
+          dir={language === "ar" ? "rtl" : "ltr"}
+        >
           {allLinks.map((link, index) => (
             <Link
               key={index}
@@ -279,6 +323,32 @@ export default function Nav() {
               {link.name}
             </Link>
           ))}
+          
+          <div className="mt-4 pt-4 border-t border-border/40 w-full max-w-[200px] flex flex-col items-center gap-4">
+            <Link
+              to="/wishlist"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground font-medium px-4 py-2 transition-colors border border-border/40 hover:border-border rounded-sm w-full justify-center"
+              style={sans}
+            >
+              <Heart size={14} className={wishCount > 0 ? "fill-primary text-primary" : ""} />
+              <span>{language === "en" ? `Wishlist (${wishCount})` : `المفضلة (${wishCount})`}</span>
+            </Link>
+
+            {/* زرار تغيير اللغة للموبايل */}
+            <button
+              onClick={() => {
+                setLanguage(language === "en" ? "ar" : "en");
+                setMenuOpen(false);
+              }}
+              className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground font-medium px-4 py-2 transition-colors border border-border/40 hover:border-border rounded-sm w-full justify-center cursor-pointer focus:outline-none"
+              style={sans}
+            >
+              <Globe size={14} />
+              <span>{language === "en" ? "العربية" : "English"}</span>
+            </button>
+          </div>
+
           <button onClick={() => setMenuOpen(false)} className="absolute top-6 right-6 text-muted-foreground hover:text-foreground cursor-pointer">
             <X size={24} />
           </button>

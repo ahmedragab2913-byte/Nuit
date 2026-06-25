@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
 import { useLanguageStore, getBilingualValue, formatPrice } from "../store/languageStore";
+import { getProductImage } from "../services/api";
 import { ShoppingBag, Eye, Sparkles } from "lucide-react";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
@@ -95,7 +96,7 @@ export default function NewArrivals() {
                         {t("newAdditionBadge")}
                       </span>
                       <img
-                        src={product.image} alt={displayName}
+                        src={getProductImage(product.image)} alt={displayName}
                         className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
                       <div className={`absolute inset-0 bg-black/20 backdrop-blur-[2px] transition-opacity duration-300 flex flex-col items-center justify-center gap-3 z-20 ${hoveredId === product.id ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
@@ -126,7 +127,7 @@ export default function NewArrivals() {
                       <h3 className="text-base text-foreground font-light mb-1" style={serif}>{displayName}</h3>
                       <span
                         className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
-                              style={{ fontFamily: "'Playfair Display', serif", color: "#313c45" }}
+                              style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}
                       >
                         {formatPrice(product.price, language)}
                       </span>

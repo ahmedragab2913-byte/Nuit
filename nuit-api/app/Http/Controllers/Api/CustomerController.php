@@ -35,12 +35,41 @@ class CustomerController extends Controller
         ]);
 
         $customer = Customer::create($data);
-        return response()->json($customer, 201);
+
+        // Return explicit field whitelist — do not expose raw model timestamps or internal fields
+        return response()->json([
+            'id'      => $customer->id,
+            'name'    => $customer->name,
+            'email'   => $customer->email,
+            'phone'   => $customer->phone,
+            'address' => $customer->address,
+            'status'  => $customer->status,
+            'joined'  => $customer->created_at->format('M Y'),
+        ], 201);
     }
 
     public function show(Customer $customer): JsonResponse
     {
-        return response()->json($customer->load('orders'));
+        $customer->loadCount('orders');
+        $customer->load('orders');
+
+        // Return explicit field whitelist — do not expose raw model
+        return response()->json([
+            'id'      => $customer->id,
+            'name'    => $customer->name,
+            'email'   => $customer->email,
+            'phone'   => $customer->phone,
+            'address' => $customer->address,
+            'status'  => $customer->status,
+            'orders'  => $customer->orders->map(fn($o) => [
+                'id'           => $o->id,
+                'order_number' => $o->order_number,
+                'grand_total'  => (float) $o->grand_total,
+                'status'       => $o->status,
+                'date'         => $o->created_at->format('M d, Y'),
+            ]),
+            'joined'  => $customer->created_at->format('M Y'),
+        ]);
     }
 
     public function update(Request $request, Customer $customer): JsonResponse
@@ -53,7 +82,16 @@ class CustomerController extends Controller
             'status'  => 'sometimes|in:new,regular,vip',
         ]));
 
-        return response()->json($customer);
+        // Return explicit field whitelist — do not expose raw model
+        return response()->json([
+            'id'      => $customer->id,
+            'name'    => $customer->name,
+            'email'   => $customer->email,
+            'phone'   => $customer->phone,
+            'address' => $customer->address,
+            'status'  => $customer->status,
+            'joined'  => $customer->created_at->format('M Y'),
+        ]);
     }
 
     public function destroy(Customer $customer): JsonResponse

@@ -2,13 +2,54 @@ import axios from "axios";
 import type { Product } from "../types";
 import { useAuthStore } from "../store/authStore";
 
-// 1. بنحدد الرابط الأساسي للسيرفر مرة واحدة ونؤمنه
-const BASE_URL = import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.startsWith('http')
-  ? import.meta.env.VITE_API_BASE_URL
-  : "http://127.0.0.1:8000";
+// Resolve the Backend Base URL dynamically from environment variables
+const getBackendUrl = (): string => {
+  // Vite environment variables (client-side)
+  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) {
+    return import.meta.env.VITE_BACKEND_URL;
+  }
+  
+  // Safe dynamic lookup to bypass strict TS compiler checking for "process"
+  const globalObj = typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : {});
+  const proc = (globalObj as any).process;
+  if (proc && proc.env) {
+    if (proc.env.VITE_BACKEND_URL) {
+      return proc.env.VITE_BACKEND_URL;
+    }
+    if (proc.env.NEXT_PUBLIC_BACKEND_URL) {
+      return proc.env.NEXT_PUBLIC_BACKEND_URL;
+    }
+  }
 
-// 2. بنبني المسارات بناءً على الرابط الأساسي اللي فوق
-const API_BASE = `${BASE_URL}/api/v1`;
+  // Fallback to VITE_API_BASE_URL or dynamic host detection
+  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "127.0.0.1";
+  const isProd = typeof window !== "undefined" && (window.location.hostname.includes("vercel.app") || window.location.hostname.includes("railway.app"));
+  return isProd ? "https://nuit-production.up.railway.app" : `http://${hostname}:8000`;
+};
+
+// 🌐 1. Base server URL for fetching files and assets
+export const BACKEND_URL = getBackendUrl();
+
+const API_BASE = `${BACKEND_URL}/api/v1`;
+
+/**
+ * 🖼️ Dynamic Image Path Resolver
+ * Handles absolute/external URLs, relative uploads path, and dynamic placeholders.
+ */
+export const getProductImage = (imagePath: string | null | undefined): string => {
+  if (!imagePath || imagePath.trim() === "") {
+    return `${BACKEND_URL}/uploads/products/placeholder.png`;
+  }
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    return imagePath;
+  }
+  const cleanPath = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+  return `${BACKEND_URL}${cleanPath}`;
+};
 
 export const api = axios.create({
   baseURL: API_BASE,

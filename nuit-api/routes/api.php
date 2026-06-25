@@ -16,10 +16,12 @@ use App\Http\Controllers\Api\PromoCodeController;
 
 Route::prefix('v1')->group(function () {
 
-    // --- 1. Public Auth Routes ---
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/admin/login', [AuthController::class, 'adminLogin']);
-    Route::post('/register', [AuthController::class, 'register']);
+    // --- 1. Public Auth Routes (Rate-limited: 10 attempts/min per IP) ---
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/admin/login', [AuthController::class, 'adminLogin']);
+        Route::post('/register', [AuthController::class, 'register']);
+    });
 
     // --- 2. Public Storefront Routes (متاحة للجميع - بدون قيود) ---
     Route::get('/products', [ProductController::class, 'index']);

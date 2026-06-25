@@ -68,14 +68,32 @@
 
 /* توحيد الدرجة */
 .dark {
-  --background: #EFF6F3;
-  --foreground: #374653;
-  /* --secondary: #121824;             
-  --secondary-foreground: #EFF6F3; */
-  --card: #ffffff;
-  --card-foreground: #374653;
+  /* الأرضية الليلية: رمادي كربوني مزرق عميق */
+  --background: #12181f; 
+  --foreground: #edf1f4;
+  
+  /* الكروت ليلاً: درجة أفتح سيكا لتبرز فوق الخلفية الداكنة */
+  --card: #1a222d; 
+  --card-foreground: #edf1f4;
+  
+  --popover: #1a222d;
+  --popover-foreground: #edf1f4;
+
+  /* الذهب الرملي الفاخر لعطور الـ Premium النيش */
   --primary: #998C73;
-  --border: rgba(55, 70, 83, 0.15);
+  --primary-foreground: #12181f;
+  
+  --secondary: #242f3d;
+  --secondary-foreground: #edf1f4;
+  
+  --muted: #1e2631;
+  --muted-foreground: #778ca4;
+  
+  --border: rgba(237, 241, 244, 0.1);
+  --input-background: #161d26;
+  
+  --sidebar: #1a222d;
+  --sidebar-foreground: #edf1f4;
 }
 
 @theme inline {
@@ -195,3 +213,18 @@ html[lang="ar"] body {
 html[lang="ar"] [style*="Raleway"] {
   font-family: 'Tajawal', sans-serif !important;
 } */
+
+/* ─── Seamless Marquee Animation ────────────────────────────────────────────
+   Two identical item groups sit side-by-side inside the track.
+   Total track width = 2 × Group width.
+   Animating -50% moves exactly one Group width → seamless loop.
+   RTL: use [animation-direction:reverse] on the element (50%→0 = ←→ flip).
+────────────────────────────────────────────────────────────────────────── */
+@keyframes nuit-marquee {
+  from { transform: translate3d(0,    0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+@theme {
+  --animate-nuit-marquee: nuit-marquee 50s linear infinite;
+}

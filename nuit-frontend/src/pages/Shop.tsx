@@ -4,12 +4,36 @@ import { Heart, ShoppingBag, Eye, Sparkles, Search, X } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { useLanguageStore, getBilingualValue, formatPrice } from "../store/languageStore";
 import type { Product } from "../types";
-import { getProductswithPagination, getCategories } from "../services/api";
+import { getProductswithPagination, getCategories, getProductImage } from "../services/api";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
 const sans  = { fontFamily: "'Raleway', sans-serif" };
 
 const ITEMS_PER_PAGE = 12;
+
+// 1. تعريف نصوص الهيدر لكل فئة باللغتين العربية والإنجليزية
+const CATEGORY_HEADERS: Record<string, { title: { ar: string; en: string }; desc: { ar: string; en: string } }> = {
+  All: {
+    title: { ar: "كل المنتجات", en: "All Products" },
+    desc: { ar: "مجموعة منسقة من العطور الفاخرة المصممة لكل المناسبات. جرب الأناقة التي تدوم طويلاً وتحدد حضورك.", en: "A curated collection of luxury fragrances crafted for every occasion. Experience elegance that lingers." }
+  },
+  "Men Perfumes": {
+    title: { ar: "عطور رجالية", en: "Men's Perfumes" },
+    desc: { ar: "مجموعة فاخرة من العطور الرجالية الجريئة والقوية التي تعكس الجاذبية والثقة المطلقة.", en: "A bold selection of sophisticated fragrances crafted for the modern gentleman." }
+  },
+  "Women Perfumes": {
+    title: { ar: "عطور نسائية", en: "Women's Perfumes" },
+    desc: { ar: "تركيبات ساحرة تفيض بالأنوثة والرقة، مصممة خصيصاً لتترك أثراً لا يُنسى في كل مكان.", en: "Enchanting compositions of delicate notes, designed to leave an unforgettable impression." }
+  },
+  Unisex: {
+    title: { ar: "عطور للجنسين", en: "Unisex Perfumes" },
+    desc: { ar: "عطور متناغمة تتجاوز الحدود لتناسب الجميع، بمزيج فريد يجمع بين الدفء والانتعاش.", en: "Harmonious scents tailored for everyone, blending unique elements to defy expectations." }
+  },
+  General: {
+    title: { ar: "عطور عامة", en: "General Collection" },
+    desc: { ar: "اكتشف تشكيلتنا العامة والمتنوعة من الإبداعات العطرية التي تناسب يومك بمختلف تفاصيله.", en: "Discover our versatile collection of aromatic creations perfect for your daily rituals." }
+  }
+};
 
 export default function Shop() {
   const navigate = useNavigate();
@@ -24,16 +48,13 @@ export default function Shop() {
     return cat;
   };
 
-  // 1. إدارة الفلترة والصفحات والبحث عبر الـ URL Query Parameters مباشرة
   const [searchParams, setSearchParams] = useSearchParams();
   
   const activeCategory = searchParams.get("category") || "All";
   const currentPage    = Number(searchParams.get("page")) || 1;
-  const searchQuery    = searchParams.get("search") || ""; // جلب قيمة البحث الحالية من الـ URL
+  const searchQuery    = searchParams.get("search") || "";
 
-  // State محلي للتحكم في النص داخل حقل الإدخال أثناء الكتابة
   const [searchInput, setSearchInput] = useState(searchQuery);
-
   const [hoveredId, setHoveredId]             = useState<string | number | null>(null);
   const [products, setProducts]               = useState<Product[]>([]);
   const [loading, setLoading]                 = useState(true);
@@ -43,37 +64,34 @@ export default function Shop() {
   const [categories, setCategories]           = useState<string[]>(["All"]);
   const [addedIds, setAddedIds]               = useState<Set<number>>(new Set());
 
-  // مزامنة الـ Input المحلي لو تغير الـ URL (مثلاً عند مسح البحث)
+  // جلب النصوص الديناميكية للفئة الحالية (وإن لم تكن معرفة نعود لـ All كاحتياط)
+  const currentHeader = CATEGORY_HEADERS[activeCategory] || CATEGORY_HEADERS["All"];
+  const displayTitle = language === "ar" ? currentHeader.title.ar : currentHeader.title.en;
+  const displayDesc = language === "ar" ? currentHeader.desc.ar : currentHeader.desc.en;
+
   useEffect(() => {
     setSearchInput(searchQuery);
   }, [searchQuery]);
 
-  // 2. جلب الفئات وترتيبها ترتيب مخصص
   useEffect(() => {
     getCategories()
       .then(data => {
         const preferredOrder = ["All", "Men Perfumes", "Women Perfumes", "Unisex", "General"];
-
         const sortedCategories = ["All", ...data].sort((a, b) => {
           const indexA = preferredOrder.indexOf(a);
           const indexB = preferredOrder.indexOf(b);
-
           const finalIndexA = indexA === -1 ? 99 : indexA;
           const finalIndexB = indexB === -1 ? 99 : indexB;
-
           return finalIndexA - finalIndexB;
         });
-
         setCategories(sortedCategories);
       })
       .catch(err => console.error("Failed to load categories:", err));
   }, []);
 
-  // 3. دالة جلب المنتجات بناءً على الفئة، الصفحة، والبحث
   const fetchProducts = (page: number, category: string, query: string) => {
     setLoading(true);
     setError(null);
-
     getProductswithPagination(page, ITEMS_PER_PAGE, category, query)
       .then(data => {
         setProducts(data.data);
@@ -84,25 +102,20 @@ export default function Shop() {
       .finally(() => setLoading(false));
   };
 
-  // 4. مراقبة الـ URL لتحديث المنتجات فوراً عند حدوث أي تغيير في الفلترة أو البحث
   useEffect(() => {
     fetchProducts(currentPage, activeCategory, searchQuery);
   }, [currentPage, activeCategory, searchQuery]);
 
-  // البيانات تأتي مفرزة بالكامل من الـ Backend
   const filtered = products;
 
-  // دالة التعامل مع إرسال فورم البحث
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const params: any = { page: "1" }; // تصفير الصفحة دائماً عند بداية بحث جديد
+    const params: any = { page: "1" };
     if (activeCategory !== "All") params.category = activeCategory;
     if (searchInput.trim() !== "") params.search = searchInput.trim();
-    
     setSearchParams(params);
   };
 
-  // دالة مسح نص البحث بالكامل والعودة للحالة الطبيعية
   const handleClearSearch = () => {
     setSearchInput("");
     const params: any = { page: "1" };
@@ -113,7 +126,7 @@ export default function Shop() {
   const handleCategoryChange = (cat: string) => {
     const params: any = { page: "1" };
     if (cat !== "All") params.category = cat;
-    if (searchQuery) params.search = searchQuery; // الحفاظ على نص البحث عند تغيير الفئة
+    if (searchQuery) params.search = searchQuery;
     setSearchParams(params);
   };
 
@@ -128,7 +141,6 @@ export default function Shop() {
   const handleAddToCart = (product: Product) => {
     addToCart(product, 1);
     setAddedIds(prev => new Set(prev).add(product.id));
-
     setTimeout(() => {
       setAddedIds(prev => {
         const next = new Set(prev);
@@ -142,22 +154,24 @@ export default function Shop() {
     <div className="bg-background text-foreground min-h-screen pt-32 pb-24 px-6 lg:px-16" style={sans}>
       <div className="max-w-7xl mx-auto">
 
-        {/* Header */}
+        {/* Dynamic Header */}
         <div className="text-center mb-10 space-y-4">
           <div className="flex items-center justify-center gap-2 text-primary/80 text-xs tracking-[0.3em] uppercase">
             <Sparkles size={12} />
             <span>{language === "ar" ? "التشكيلة الخاصة" : "Maison Collection"}</span>
           </div>
-          <h1 className="text-3xl md:text-5xl tracking-[0.25em] uppercase font-light text-foreground" style={serif}>
-            {t("allProducts")}
+          {/* تغيير العنوان ديناميكياً */}
+          <h1 className="text-3xl md:text-5xl tracking-[0.25em] uppercase font-light text-foreground/90" style={serif}>
+            {displayTitle}
           </h1>
           <div className="w-12 h-[1px] bg-primary/60 mx-auto" />
+          {/* تغيير الوصف ديناميكياً */}
           <p className="text-muted-foreground text-sm font-light max-w-xl mx-auto leading-relaxed">
-            {t("heroDesc")}
+            {displayDesc}
           </p>
         </div>
 
-        {/* شريط البحث الفاخر والمتناسق مع الهوية */}
+        {/* Luxury Search Bar */}
         <div className="max-w-md mx-auto mb-14">
           <form onSubmit={handleSearchSubmit} className="relative flex items-center border-b border-border focus-within:border-primary transition-colors duration-300 pb-2">
             <input
@@ -213,7 +227,7 @@ export default function Shop() {
           }
         </div>
 
-        {/* الـ Render الأساسي للجسم البرمجي */}
+        {/* Products Render Box */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
@@ -257,7 +271,7 @@ export default function Shop() {
                   >
                     <div className="relative aspect-[3/4] w-full bg-secondary overflow-hidden border border-border/40 mb-5">
                       <img
-                        src={product.image}
+                        src={getProductImage(product.image)}
                         alt={pName}
                         className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
@@ -320,7 +334,7 @@ export default function Shop() {
                       <div className="mt-auto pt-2 flex flex-col gap-2 items-center">
                         <span 
                           className="text-base tracking-[0.16em] uppercase font-medium lining-nums" 
-                          style={{ ...serif, color: "#313c45" }}
+                          style={{ ...serif, color: "#c4a76b" }}
                         >
                           {formatPrice(product.price, language)}
                         </span>

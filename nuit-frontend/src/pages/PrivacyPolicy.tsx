@@ -46,8 +46,8 @@ export default function PrivacyPolicy() {
 
           {/* 1. Information We Collect */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <Eye size={18} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <Eye size={18} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "1. البيانات التي نجمعها" : "1. Information We Collect"}
               </h2>
@@ -82,8 +82,8 @@ export default function PrivacyPolicy() {
 
           {/* 2. How We Use Your Information */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <Shield size={18} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <Shield size={18} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "2. كيف نستخدم معلوماتك" : "2. How We Use Your Information"}
               </h2>
@@ -114,8 +114,8 @@ export default function PrivacyPolicy() {
 
           {/* 3. Data Protection */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <Lock size={17} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <Lock size={17} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "3. حماية البيانات" : "3. Data Protection"}
               </h2>
@@ -129,8 +129,8 @@ export default function PrivacyPolicy() {
 
           {/* 4. Data Sharing & Third Parties */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <UserCheck size={18} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <UserCheck size={18} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "4. مشاركة البيانات وأطراف ثالثة" : "4. Data Sharing & Third Parties"}
               </h2>
@@ -157,8 +157,8 @@ export default function PrivacyPolicy() {
 
           {/* 5. Cookies */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <Cookie size={18} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <Cookie size={18} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "5. ملفات تعريف الارتباط (الكوكيز)" : "5. Cookies"}
               </h2>
@@ -172,8 +172,8 @@ export default function PrivacyPolicy() {
 
           {/* 6. Your Rights */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <UserCheck size={18} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <UserCheck size={18} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "6. حقوقك" : "6. Your Rights"}
               </h2>
@@ -187,8 +187,8 @@ export default function PrivacyPolicy() {
 
           {/* 7. Changes to This Policy */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <RefreshCw size={16} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <RefreshCw size={16} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "7. التغييرات على هذه السياسة" : "7. Changes to This Policy"}
               </h2>

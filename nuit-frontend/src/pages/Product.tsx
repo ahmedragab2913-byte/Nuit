@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Heart, Minus, Plus, Link2, Check } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { useLanguageStore, getBilingualValue, formatPrice } from "../store/languageStore";
-import { getProductById } from "../services/api";
+import { getProductById, getProductImage } from "../services/api";
 import type { Product as ProductType } from "../types";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
@@ -112,7 +112,7 @@ export default function Product() {
         {/* Image */}
         <div className="relative">
           <div className="aspect-[4/5] bg-secondary overflow-hidden">
-            <img src={product.image} alt={pName} className="w-full h-full object-cover" />
+            <img src={getProductImage(product.image)} alt={pName} className="w-full h-full object-cover" />
           </div>
           
           {isOutOfStock && (
@@ -150,7 +150,7 @@ export default function Product() {
           <div className="border-t border-border pt-8 mb-6">
             <div className="flex items-baseline justify-between mb-6">
               <p className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
-                              style={{ fontFamily: "'Playfair Display', serif", color: "#313c45" }}>
+                              style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}>
                 {formatPrice(product.price, language)}
               </p>
               <p className="text-[10px] text-muted-foreground tracking-wider">
@@ -318,11 +318,11 @@ export default function Product() {
                   }}
                 >
                   <div className="aspect-[3/4] bg-background overflow-hidden mb-4 border border-border/30">
-                    <img src={p.image} alt={rpName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <img src={getProductImage(p.image)} alt={rpName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                   </div>
                   <p className="text-sm text-foreground font-light" style={serif}>{rpName}</p>
                   <p className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
-                           style={{ fontFamily: "'Playfair Display', serif", color: "#313c45" }}
+                           style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}
                   >
                     {formatPrice(p.price, language)}
                   </p>

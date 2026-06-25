@@ -23,7 +23,7 @@ export const translations: Record<string, Record<string, any>> = {
     },
 
     // Footer
-    brandDesc: "The art of luxury in every bottle. Seamlessly blending high-end French notes with everyday elegance.",
+    brandDesc: "Your invisible signature in a bottle. We bring together the most distinctive scents to complement your identity and define your day.",
     followUs: "Follow us",
     importantLinks: "Important Links",
     allCollections: "All Collections",
@@ -31,7 +31,7 @@ export const translations: Record<string, Record<string, any>> = {
     termsConditions: "Terms & Conditions",
     privacyPolicy: "Privacy Policy",
     whyShopWithUs: "Why Shop With Us",
-    fastDelivery: "Fast Delivery Worldwide",
+    fastDelivery: "Fast delivery across Egypt",
     easyReturns: "14-Day Easy Returns",
     authenticProducts: "100% Authentic Products",
     contactUs: "Contact Us",
@@ -56,8 +56,8 @@ export const translations: Record<string, Record<string, any>> = {
     discoverBestSeller: "Discover Best Seller",
     theMaison: "The Maison",
     fineFragranceTitle: "The art of fine fragrance crafted for every moment",
-    aboutDesc1: "Nuit was founded on the philosophy that a fragrance is more than just a scent—it is an invisible signature. Every bottle in our collection is meticulously blended to evoke emotions, inspire confidence, and complement your unique character throughout the day.",
-    aboutDesc2: "We source exceptional raw ingredients and premium oils to create balanced, long-lasting compositions. From vibrant fresh notes to deep, warm undertones, our perfumes are designed to evolve beautifully on your skin.",
+    aboutDesc1: "At Nuit, we believe that choosing a perfume is an intimate expression of identity. Instead of creating scents, we dedicate ourselves to discovering them. Our boutique serves as a premier destination, housing an elite selection of international, high-end fragrances handpicked for their craftsmanship and allure.",
+    aboutDesc2: "We bridge the gap between you and the world's most prestigious perfume houses. By focusing on authenticity, depth, and longevity, we ensure that every fragrance in our collection offers an unforgettable sensory journey that evolves beautifully on your skin.",
     uniqueScents: "Unique Scents",
     longevity: "Longevity",
     premiumQuality: "Premium Quality",
@@ -146,7 +146,7 @@ export const translations: Record<string, Record<string, any>> = {
     postalCode: "Postal Code",
     paymentMethod: "Payment Method",
     cod: "Cash on Delivery",
-    creditCard: "Credit Card (Fake Gateway)",
+    creditCard: "Credit Card",
     promoCode: "Promo Code",
     apply: "Apply",
     placeOrder: "Place Order",
@@ -245,11 +245,11 @@ export const translations: Record<string, Record<string, any>> = {
     aboutNuit: "About Nuit",
     ourStory: "Our Story",
     craftedWithPassion: "Crafted with passion",
-    aboutDesc1Page: "Nuit is a modern e-commerce showcase built with a clean separation of concerns: a React storefront, an admin dashboard, and a Laravel API. The application demonstrates stateful authentication with Sanctum, role-based admin access, and a premium UI using glass-morphism, subtle gradients, and the Inter font.",
-    aboutDesc2Page: "Explore the shop, add items to the cart, and try the checkout flow. The codebase is fully typed with TypeScript and follows best security and performance practices.",
+    aboutDesc1Page: "At Nuit, we believe that choosing a perfume is an intimate expression of identity. Guided by a passion for distinction, we dedicate ourselves to discovering exceptional fragrances. Our boutique serves as a premier destination, housing an elite selection of international, high-end perfumes handpicked for their craftsmanship and allure.",
+    aboutDesc2Page: "We bridge the gap between you and the world's most prestigious perfume houses. By focusing on authenticity, depth, and longevity, we ensure that every fragrance in our collection offers an unforgettable sensory journey that evolves beautifully on your skin.",
     ourVision: "Our Vision",
-    ourVisionDesc: "To provide developers with a reference-grade e-commerce platform that showcases modern full-stack architecture, clean code, and elegant UI/UX while remaining easy to extend and adapt.",
-    meetTheTeam: "Meet the Team",
+    ourVisionDesc: "To be the leading destination in the luxury fragrance world by providing an exceptional shopping experience that seamlessly blends world-class elegance with effortless access and supreme security.",
+    meetTheTeam: "Our Commitment",
 
     // Offers
     comingSoon: "Coming Soon",
@@ -286,10 +286,10 @@ export const translations: Record<string, Record<string, any>> = {
     },
 
     // Footer
-    brandDesc: "فن الفخامة في كل زجاجة. نمزج نوتات فرنسية راقية مع الأناقة اليومية بسلاسة.",
+    brandDesc: "بصمتك الخفية في زجاجة.. نجمع لك الروائح الأكثر تميزاً وجاذبية لترافق تفاصيل يومك وتصنع هويتك الخاصة.",
     followUs: "تابعنا",
     importantLinks: "روابط هامة",
-    allCollections: "كل المجموعات",
+    allCollections: "كل المنتجات",
     aboutUs: "من نحن",
     termsConditions: "الشروط والأحكام",
     privacyPolicy: "سياسة الخصوصية",
@@ -298,14 +298,14 @@ export const translations: Record<string, Record<string, any>> = {
     easyReturns: "إرجاع سهل خلال 14 يوماً",
     authenticProducts: "منتجات أصلية 100%",
     contactUs: "اتصل بنا",
-    rightsReserved: "© 2026 ميزون نـــــــــوي. جميع الحقوق محفوظة.",
+    rightsReserved: "© 2026 ميزون نويت. جميع الحقوق محفوظة.",
     poweredBy: "تطوير بواسطة",
-    nuitTeam: "فريق نـــــــــوي",
+    nuitTeam: "فريق نويت",
 
     // Home Page
-    maisonParis: "دار عطور · باريس",
+    maisonParis: "نخبة العطور العالمية",
     artOfLuxury: "فن الفخامة في كل زجاجة",
-    heroDesc: "مجموعة منسقة من العطور الفاخرة المصممة لكل المناسبات. جرب الأناقة التي تدوم طويلاً وتحدد حضورك.",
+    heroDesc: "نخبة مختارة من أفخم الروائح العالمية، انتقيناها بعناية لترافق تفاصيل يومك وتمنح حضورك جاذبية فريدة لا تُنسى.",
     discoverCollection: "اكتشف المجموعة",
     justComposed: "ضيفت حديثاً",
     viewAll: "عرض الكل",
@@ -319,8 +319,8 @@ export const translations: Record<string, Record<string, any>> = {
     discoverBestSeller: "اكتشف الأكثر مبيعاً",
     theMaison: "قصتنا",
     fineFragranceTitle: "فن العطور الراقية المصممة لكل لحظة",
-    aboutDesc1: "تأسست نـــــــــوي على فلسفة أن العطر أكثر من مجرد رائحة - إنه توقيعك غير المرئي. تم مزج كل زجاجة في مجموعتنا بدقة لإثارة المشاعر وإلهام الثقة واستكمال شخصيتك الفريدة طوال اليوم.",
-    aboutDesc2: "نحن نستورد مكونات خام استثنائية وزيوتًا ممتازة لابتكار تركيبات متوازنة تدوم طويلاً. من الحمضيات المنعشة إلى النغمات الدافئة والعميقة، تم تصميم عطورنا لتتطور بشكل جميل على بشرتك.",
+    aboutDesc1: "في Nuit، نؤمن أن اختيار العطر هو تعبير حميمي عن الهوية والشخصية. وانطلاقاً من شغفنا بالتميز، نكرس أنفسنا تماماً لاكتشاف الروائح الاستثنائية؛ ليصبح متجرنا وجهتك الأولى التي تضم نخبة مختارة من العطور العالمية الفاخرة، والتي تم انتقاؤها بعناية فائقة لما تتميز به من إتقان وجاذبية ساحرة.",
+    aboutDesc2: "نحن نختصر المسافة بينك وبين أشهر دور العطور المرموقة في العالم. ومن خلال التركيز على الأصالة، والعمق، والثبات، نضمن أن كل عطر في مجموعتنا يقدم لك رحلة حسية لا تُنسى تتطور بشكل جمالي وآسر على بشرتك.",
     uniqueScents: "روائح فريدة",
     longevity: "ثبات الرائحة",
     premiumQuality: "جودة فائقة",
@@ -368,7 +368,7 @@ export const translations: Record<string, Record<string, any>> = {
     nextPage: "التالي ›",
 
     // Best Sellers
-    maisonFavorites: "المفضلة في نـــــــــوي",
+    maisonFavorites: "المفضلة في نويت",
     bestSellersDesc: "استكشف أروع إبداعاتنا العطرية. عطور راقية حظيت باحتفاء عالمي وأُعدَّت لعشاق الذوق الرفيع.",
     bestSellerBadge: "الأكثر مبيعاً",
     addToBag: "أضف إلى الحقيبة",
@@ -383,7 +383,7 @@ export const translations: Record<string, Record<string, any>> = {
     relatedProducts: "منتجات مشابهة",
     reviews: "التقييمات",
     share: "مشاركة",
-    shareMessage: "اكتشف عطر {name} من عطور نـــــــــوي الفاخرة.",
+    shareMessage: "اكتشف عطر {name} من عطور نويت الفاخرة.",
 
     // Cart Page
     cartTitle: "سلة التسوق",
@@ -409,7 +409,7 @@ export const translations: Record<string, Record<string, any>> = {
     postalCode: "الرمز البريدي",
     paymentMethod: "طريقة الدفع",
     cod: "الدفع عند الاستلام",
-    creditCard: "بطاقة الائتمان (بوابة دفع افتراضية)",
+    creditCard: "بطاقة الائتمان",
     promoCode: "كود الخصم",
     apply: "تطبيق",
     placeOrder: "تأكيد الطلب",
@@ -421,7 +421,7 @@ export const translations: Record<string, Record<string, any>> = {
     // Order Confirmation
     thankYou: "شكراً لطلبك",
     orderConfirmed: "تم تأكيد طلبك",
-    orderWelcome: "أهلاً بك في عالم نـــــــــوي. تم استلام طلبك بنجاح وهو قيد التحضير ليناسب ذوقك الرفيع.",
+    orderWelcome: "أهلاً بك في عالم نويت. تم استلام طلبك بنجاح وهو قيد التحضير ليناسب ذوقك الرفيع.",
     orderNumber: "رقم الطلب",
     deliveryEstimate: "موعد التوصيل المتوقع",
     shippingTo: "الشحن إلى",
@@ -438,7 +438,7 @@ export const translations: Record<string, Record<string, any>> = {
     // Profile
     profileTitle: "حسابي الشخصي",
     myAccount: "حسابي",
-    maisonClub: "نادي ميزون نـــــــــوي",
+    maisonClub: "نادي ميزون نويت",
     personalInfo: "المعلومات الشخصية",
     profileInformation: "معلومات الحساب",
     addressRegistry: "سجل العناوين",
@@ -493,7 +493,7 @@ export const translations: Record<string, Record<string, any>> = {
     privacyPolicyLink: "سياسة الخصوصية",
 
     // New Arrivals
-    maisonAdditions: "جديد ",
+    maisonAdditions: "جديد الدار",
     newArrivalsTitle: "وصلنا حديثاً",
     newArrivalsDesc: "اكتشف أحدث روائعنا العطرية. عطور مصنوعة بعناية فائقة، وُضعت في زجاجات أنيقة للذواقة الحقيقيين.",
     newAdditionBadge: "وصل حديثاً",
@@ -505,14 +505,14 @@ export const translations: Record<string, Record<string, any>> = {
     returnToHome: "العودة للرئيسية",
 
     // About
-    aboutNuit: "عن نـــــــــوي",
+    aboutNuit: "عن نويت",
     ourStory: "قصتنا",
     craftedWithPassion: "صُنعت بشغف",
-    aboutDesc1Page: "نـــــــــوي هي متجر إلكتروني عصري مبني بفصل واضح للاهتمامات: واجهة React، ولوحة تحكم إدارية، وواجهة برمجية Laravel. يعرض التطبيق المصادقة ذات الحالة مع Sanctum، والوصول الإداري القائم على الأدوار، وواجهة مستخدم متميزة.",
-    aboutDesc2Page: "استكشف المتجر، أضف المنتجات إلى السلة، وجرب تجربة الدفع. قاعدة الكود مكتوبة بالكامل بـ TypeScript وتتبع أفضل ممارسات الأمان والأداء.",
+    aboutDesc1Page: " تأسست Nuit برؤية واضحة وجريئة: أن نقرب إليك أفخم العطور العالمية وأكثرها شهرة، دون أي مساومة على الجودة أو السعر. واستلهاماً من الأناقة الليلية والغموض الساحر، نوفر لك أرقى العطور العالمية بنقاء تام وثبات استثنائي يفرض حضورك في كل مكان.",
+    aboutDesc2Page: "نحن نؤمن أن الفخامة العطرية الحقيقية لا تعرف القيود، فالعطر هو امتداد للروح والهوية. استكشف البوتيك، وأضف روائحك المفضلة إلى السلة، واستمتع بتجربة دفع فاخرة وسلسة مصممة لتناسب ذوقك الرفيع.",
     ourVision: "رؤيتنا",
-    ourVisionDesc: "تزويد المطورين بمنصة تجارة إلكترونية مرجعية تُبرز بنية full-stack الحديثة، والكود النظيف، وتجربة المستخدم الأنيقة مع سهولة التوسع والتكيف.",
-    meetTheTeam: "تعرف على الفريق",
+    ourVisionDesc: "أن نكون الوجهة الأولى والملهمة في عالم العطور الفاخرة، من خلال تقديم منصة تسوق استثنائية تمنح عملائنا تجربة مستخدم ساحرة تدمج بين فخامة المنتجات العالمية وسهولة الوصول إليها وأعلى معايير الأمان.",
+    meetTheTeam: "التزامنا",
 
     // Offers
     comingSoon: "قريباً",

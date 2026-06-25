@@ -27,16 +27,41 @@ export default function About() {
             <p className="text-muted-foreground mb-6 leading-relaxed text-sm font-light">
               {t("aboutDesc2Page")}
             </p>
+            
             <h3 className="text-2xl font-medium mb-2" style={serif}>{t("ourVision")}</h3>
             <p className="text-base mb-4 text-muted-foreground text-sm font-light leading-relaxed">
               {t("ourVisionDesc")}
             </p>
-            <h3 className="text-2xl font-medium mb-2" style={serif}>{t("meetTheTeam")}</h3>
-            <ul className={`list-disc space-y-2 text-sm text-muted-foreground ${isAr ? "list-inside" : "list-inside"}`}>
-              <li><strong>Lead Developer:</strong> Ahmed – Full-stack architect, Laravel & React.</li>
-              <li><strong>UI/UX Designer:</strong> Lina – Visual design, glass-morphism, branding.</li>
-              <li><strong>Backend Engineer:</strong> Sam – API design, Sanctum security.</li>
-              <li><strong>Frontend Engineer:</strong> Maya – State management, component library.</li>
+
+            {/* نقاط التميز الخاصة بالعطور الفاخرة والبراند */}
+            <h3 className="text-2xl font-medium mb-2" style={serif}>
+              {isAr ? "لماذا تتسوق من Nuit؟" : "Why Shop From Nuit?"}
+            </h3>
+            <ul className={`list-none space-y-3 text-sm text-muted-foreground ${isAr ? "pr-0" : "pl-0"}`}>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✦</span>
+                <span>
+                  {isAr 
+                    ? "مجموعة مختارة من أشهر وأرقى العطور العالمية بين يديك." 
+                    : "A curated collection of the finest and most celebrated global fragrances."}
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✦</span>
+                <span>
+                  {isAr 
+                    ? "ضمان الجودة العالية والنقاء التام لكل زجاجة عطر نقوم بتوفيرها." 
+                    : "Guaranteed premium quality and pristine formulation in every single bottle."}
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">✦</span>
+                <span>
+                  {isAr 
+                    ? "تجربة تسوق فاخرة وموثوقة تليق بأصحاب الذوق الرفيع." 
+                    : "A luxury, trusted shopping experience tailored for fragrance connoisseurs."}
+                </span>
+              </li>
             </ul>
           </div>
 
@@ -45,15 +70,17 @@ export default function About() {
             <div className="aspect-[4/5] bg-secondary overflow-hidden rounded-lg">
               <img
                 src="https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=1000&auto=format&fit=crop&q=80"
-                alt="Perfumer at work"
+                alt="Luxury Fragrance Collection"
                 className="w-full h-full object-cover"
               />
             </div>
+            
+            {/* مربع سنة التأسيس الفاخر مع الـ lining-nums للاستقامة الفنية */}
             <div className={`absolute -bottom-6 ${isAr ? "-right-6" : "-left-6"} w-36 h-36 border border-border bg-background flex flex-col items-center justify-center`}>
               <p className={`text-[11px] ${isAr ? "" : "tracking-[0.2em]"} uppercase text-muted-foreground mb-1`}>
                 {t("est")}
               </p>
-              <p className="text-3xl text-foreground font-light" style={serif}>2020</p>
+              <p className="text-3xl text-foreground font-light lining-nums" style={serif}>2020</p>
             </div>
           </div>
 

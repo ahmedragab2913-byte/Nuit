@@ -11,7 +11,7 @@ const sans  = { fontFamily: "'Raleway', sans-serif" };
 export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/profile";
+  const redirect = searchParams.get("redirect") || "/shop"; // Default redirect path if none is provided
 
   // 🛠️ تم إزالة setError من هنا لمنع خطأ التايب سكريبت
   const { register, login, loading, error, clearError, isAuthenticated } = useAuthStore();

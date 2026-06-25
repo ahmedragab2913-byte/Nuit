@@ -24,7 +24,8 @@ class User extends Authenticatable
         'email',
         'phone',
         'password',
-        'role',
+        // NOTE: 'role' intentionally excluded from $fillable.
+        // Always set explicitly: $user->role = 'customer'; $user->save();
     ];
 
     /**

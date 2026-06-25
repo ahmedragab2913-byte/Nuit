@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getBestSellers } from "../services/api";
+import { getBestSellers, getProductImage } from "../services/api";
 import { ShoppingBag, Eye, Sparkles } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { useLanguageStore, getBilingualValue, formatPrice } from "../store/languageStore";
@@ -113,7 +113,7 @@ export default function BestSellers() {
                         {t("bestSellerBadge")}
                       </span>
                       <img
-                        src={product.image}
+                        src={getProductImage(product.image)}
                         alt={displayName}
                         className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
@@ -150,7 +150,7 @@ export default function BestSellers() {
                       </h3>
                       <span
                         className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
-                              style={{ fontFamily: "'Playfair Display', serif", color: "#313c45" }}
+                              style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}
                       >
                         {formatPrice(product.price, language)}
                       </span>

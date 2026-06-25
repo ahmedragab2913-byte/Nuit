@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Heart, Search, X } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { useLanguageStore, getBilingualValue, formatPrice } from "../store/languageStore";
+import { getProductImage } from "../services/api";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
 const sans  = { fontFamily: "'Raleway', sans-serif" };
@@ -103,9 +104,9 @@ export default function Home() {
       <section className="px-8 lg:px-20 py-28 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-baseline mb-16 gap-4">
           <div>
-            <p className="text-[11px] tracking-[0.5em] uppercase text-primary mb-3">{t("justComposed")}</p>
+            {/* <p className="text-[15px] tracking-[0.5em] uppercase text-primary mb-3">{t("justComposed")}</p> */}
             <h2 className="text-4xl font-light text-foreground" style={serif}>
-              {language === "ar" ? "الروائح المبتكرة حديثاً" : "New Releases"}
+              {language === "ar" ? "وصل حديثاً" : "New Releases"}
             </h2>
           </div>
           <button 
@@ -149,7 +150,7 @@ export default function Home() {
                   >
                     <div className="relative overflow-hidden bg-secondary aspect-[3/4] mb-5">
                       <img 
-                        src={product.image} 
+                        src={getProductImage(product.image)} 
                         alt={pName} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                       />
@@ -171,7 +172,7 @@ export default function Home() {
                     <p className="text-xs text-muted-foreground italic mb-3">{product.tagline}</p>
                     
                     <p className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
-                              style={{ fontFamily: "'Playfair Display', serif", color: "#313c45" }}>
+                              style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}>
                       {formatPrice(product.price, language)}
                     </p>
                   </div>
@@ -186,7 +187,7 @@ export default function Home() {
         <section className="mx-8 lg:mx-20 mb-28">
           <div className="bg-secondary border border-border p-12 lg:p-20 flex flex-col lg:flex-row items-center gap-14">
             <div className="flex-1 order-2 lg:order-1">
-              <p className="text-[11px] tracking-[0.5em] uppercase text-primary mb-5">{t("bestSellerAccord")}</p>
+              <p className="text-[15px] tracking-normal  tracking-widest uppercase text-primary mb-5">{t("bestSellerAccord")}</p>
               <h2 className="text-4xl lg:text-5xl font-light text-foreground mb-6 leading-tight" style={serif}>
                 {getBilingualValue(bestSellerProduct.name, bestSellerProduct.name_ar, language)} <br />
                 <em>{bestSellerProduct.tagline}</em>
@@ -196,7 +197,7 @@ export default function Home() {
               </p>
               <button
                 onClick={() => navigate(`/product/${bestSellerProduct.id}`)}
-                className="group flex items-center gap-4 text-[11px] tracking-[0.25em] uppercase text-primary border border-primary px-8 py-4 hover:bg-primary hover:text-primary-foreground transition-all duration-300 cursor-pointer"
+                className="group flex items-center gap-4 text-[15px] tracking-[0.25em] uppercase text-primary border border-primary px-8 py-4 hover:bg-primary hover:text-primary-foreground transition-all duration-300 cursor-pointer"
               >
                 {t("discoverBestSeller")}
                 <ArrowRight size={13} className={`group-hover:translate-x-1 transition-transform ${language === "ar" ? "rotate-180" : ""}`} />
@@ -204,7 +205,7 @@ export default function Home() {
             </div>
             <div className="w-60 h-72 bg-background overflow-hidden flex-shrink-0 order-1 lg:order-2">
               <img 
-                src={bestSellerProduct.image} 
+                src={getProductImage(bestSellerProduct.image)} 
                 alt={getBilingualValue(bestSellerProduct.name, bestSellerProduct.name_ar, language)} 
                 className="w-full h-full object-cover" 
               />
@@ -217,17 +218,17 @@ export default function Home() {
       <section className="px-8 lg:px-20 py-28 border-t border-border">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
           <div>
-            <p className="text-[11px] tracking-[0.5em] uppercase text-primary mb-6">{t("theMaison")}</p>
+            <p className="text-[15px] tracking-[0.5em] uppercase text-primary mb-6">{t("theMaison")}</p>
             <h2 className="text-4xl lg:text-5xl font-light text-foreground mb-8 leading-tight" style={serif}>
               {language === "ar" ? (
                 <>
                   فن العطور الراقية <br />
-                  <em className="text-primary/90">المصممة لكل لحظة</em>
+                  <span className="text-primary/90 font-medium">المصممة لكل لحظة</span>
                 </>
               ) : (
                 <>
                   The art of fine fragrance<br />
-                  <em className="text-primary/90">crafted for every moment</em>
+                  <em className="text-primary/90 font-medium">crafted for every moment</em>
                 </>
               )}
             </h2>
@@ -237,7 +238,7 @@ export default function Home() {
             <p className="text-muted-foreground mb-10 leading-relaxed text-sm font-light">
               {t("aboutDesc2")}
             </p>
-            <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border">
+            <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border lining-nums">
               {[
                 ["+50", t("uniqueScents")],
                 ["24h", t("longevity")],

@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, ShoppingBag, Calendar, MapPin, ArrowRight } from "lucide-react";
 import { useLanguageStore, formatBilingual, formatPrice } from "../store/languageStore";
+import { getProductImage } from "../services/api";
 
 export default function OrderConfirmation() {
   const location = useLocation();
@@ -135,15 +136,13 @@ export default function OrderConfirmation() {
                 className="flex justify-between items-center py-4 first:pt-0 last:pb-0 gap-4"
               >
                 <div className="flex items-center gap-4">
-                  {item.image && (
-                    <div className="w-10 h-12 bg-secondary border border-border/30 flex-shrink-0">
-                      <img
-                        src={item.image}
-                        alt={displayName}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
+                  <div className="w-10 h-12 bg-secondary border border-border/30 flex-shrink-0">
+                    <img
+                      src={getProductImage(item.image)}
+                      alt={displayName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                   <div className="text-start">
                     <p className="text-xs font-semibold text-foreground">{displayName}</p>
                     <p className="text-[10px] text-muted-foreground/70">

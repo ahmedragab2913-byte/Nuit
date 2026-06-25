@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useNavigate, NavLink } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
 import Sidebar, { navItems } from "./components/Sidebar";
@@ -52,7 +52,9 @@ const playNotificationSound = () => {
 
 // 1. Private Route Wrapper
 function PrivateRoute() {
-  const { isAuthenticated, hasCheckedAuth, checkAuth } = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasCheckedAuth = useAuthStore((state) => state.hasCheckedAuth);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
 
   useEffect(() => {
     if (!hasCheckedAuth) {
@@ -79,7 +81,17 @@ function DashboardLayout() {
   const logout = useAuthStore((state) => state.logout);
   const pollNewOrders = useAdminStore((state) => state.pollNewOrders);
 
-  // Setup desktop notifications permission and order polling interval
+  // Keep a ref to the latest pollNewOrders so the interval callback never
+  // goes stale, but the effect itself only runs once on mount.
+  const pollNewOrdersRef = useRef(pollNewOrders);
+  useEffect(() => {
+    pollNewOrdersRef.current = pollNewOrders;
+  }, [pollNewOrders]);
+
+  // Setup desktop notifications permission and order polling interval.
+  // Dependency array is intentionally empty [] so the interval is created
+  // exactly once and torn down on unmount — preventing the infinite loop
+  // that occurred when pollNewOrders was listed as a dependency.
   useEffect(() => {
     // Request permission on mount
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -89,7 +101,7 @@ function DashboardLayout() {
     }
 
     const interval = setInterval(async () => {
-      const newOrders = await pollNewOrders();
+      const newOrders = await pollNewOrdersRef.current();
       if (newOrders && newOrders.length > 0) {
         // Play luxury notification tone
         playNotificationSound();
@@ -108,10 +120,10 @@ function DashboardLayout() {
           }
         });
       }
-    }, 10000); // Poll every 10 seconds
+    }, 60000); // Poll every 10 seconds
 
     return () => clearInterval(interval);
-  }, [pollNewOrders]);
+  }, []); // ← empty: interval is registered once, cleaned up on unmount
 
   const handleLogout = async () => {
     setIsMobileMenuOpen(false);

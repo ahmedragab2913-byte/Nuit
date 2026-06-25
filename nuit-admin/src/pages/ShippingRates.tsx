@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit3, Save, X, RefreshCw, Landmark } from 'lucide-react';
 import { useAdminStore } from '../store/adminStore';
 
@@ -21,15 +21,13 @@ const parseCityName = (cityName: string) => {
 };
 
 export default function ShippingRates() {
-  const {
-    shippingRates,
-    shippingRatesLoading,
-    shippingRatesError,
-    fetchShippingRates,
-    addShippingRate,
-    editShippingRate,
-    removeShippingRate,
-  } = useAdminStore();
+  const shippingRates = useAdminStore((state) => state.shippingRates);
+  const shippingRatesLoading = useAdminStore((state) => state.shippingRatesLoading);
+  const shippingRatesError = useAdminStore((state) => state.shippingRatesError);
+  const fetchShippingRates = useAdminStore((state) => state.fetchShippingRates);
+  const addShippingRate = useAdminStore((state) => state.addShippingRate);
+  const editShippingRate = useAdminStore((state) => state.editShippingRate);
+  const removeShippingRate = useAdminStore((state) => state.removeShippingRate);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [newRate, setNewRate] = useState<string>('');
@@ -40,9 +38,14 @@ export default function ShippingRates() {
   const [addRate, setAddRate] = useState<string>('');
   const [addLoading, setAddLoading] = useState<boolean>(false);
 
+  const fetchShippingRatesRef = useRef(fetchShippingRates);
   useEffect(() => {
-    fetchShippingRates();
+    fetchShippingRatesRef.current = fetchShippingRates;
   }, [fetchShippingRates]);
+
+  useEffect(() => {
+    fetchShippingRatesRef.current();
+  }, []); // intentionally empty: fetch once on mount
 
   const handleAddRate = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, Ticket, RefreshCw, AlertCircle } from "lucide-react";
 import { useAdminStore } from "../store/adminStore";
 import { extractErrorMessage } from "../services/api";
@@ -18,22 +18,25 @@ const defaultForm = {
 };
 
 export default function PromoCodes() {
-  const {
-    promoCodes,
-    promoCodesLoading,
-    fetchPromoCodes,
-    addPromoCode,
-    togglePromoStatus,
-    removePromoCode,
-  } = useAdminStore();
+  const promoCodes = useAdminStore((state) => state.promoCodes);
+  const promoCodesLoading = useAdminStore((state) => state.promoCodesLoading);
+  const fetchPromoCodes = useAdminStore((state) => state.fetchPromoCodes);
+  const addPromoCode = useAdminStore((state) => state.addPromoCode);
+  const togglePromoStatus = useAdminStore((state) => state.togglePromoStatus);
+  const removePromoCode = useAdminStore((state) => state.removePromoCode);
 
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState(defaultForm);
 
+  const fetchPromoCodesRef = useRef(fetchPromoCodes);
   useEffect(() => {
-    fetchPromoCodes();
+    fetchPromoCodesRef.current = fetchPromoCodes;
   }, [fetchPromoCodes]);
+
+  useEffect(() => {
+    fetchPromoCodesRef.current();
+  }, []); // intentionally empty: fetch once on mount
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

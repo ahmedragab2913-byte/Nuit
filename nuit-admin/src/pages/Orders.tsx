@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, RefreshCw, Phone, MapPin, X, ArrowRight } from "lucide-react";
 import { useAdminStore } from "../store/adminStore";
 import type { Order } from "../types";
@@ -40,25 +40,32 @@ const paymentStatusColor = (s: string) => {
 };
 
 export default function Orders() {
-  const {
-    orders,
-    ordersLoading: loading,
-    ordersError: error,
-    ordersSearchQuery,
-    ordersStatusFilter,
-    setOrdersFilter,
-    fetchOrders,
-    updateStatus
-  } = useAdminStore();
+  const orders = useAdminStore((state) => state.orders);
+  const loading = useAdminStore((state) => state.ordersLoading);
+  const error = useAdminStore((state) => state.ordersError);
+  const ordersSearchQuery = useAdminStore((state) => state.ordersSearchQuery);
+  const ordersStatusFilter = useAdminStore((state) => state.ordersStatusFilter);
+  const setOrdersFilter = useAdminStore((state) => state.setOrdersFilter);
+  const fetchOrders = useAdminStore((state) => state.fetchOrders);
+  const updateStatus = useAdminStore((state) => state.updateStatus);
 
   // Initialise from store so input matches persisted filter on re-mount
   const [search, setSearch] = useState(ordersSearchQuery);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  // Keep a stable ref so the fetch-on-mount effect below never needs
+  // fetchOrders in its dependency array (which would cause an infinite loop
+  // because every set() call inside fetchOrders produces a new selector ref).
+  const fetchOrdersRef = useRef(fetchOrders);
   useEffect(() => {
-    fetchOrders();
+    fetchOrdersRef.current = fetchOrders;
   }, [fetchOrders]);
+
+  // Fetch orders once on mount only.
+  useEffect(() => {
+    fetchOrdersRef.current();
+  }, []); // ← intentionally empty: run once on mount
 
   // Sync search input with Zustand store filter with debounce
   useEffect(() => {

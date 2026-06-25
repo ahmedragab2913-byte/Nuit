@@ -45,6 +45,7 @@ interface AdminStoreState {
   markAllNotificationsRead: () => void;
   clearNotifications: () => void;
   pollNewOrders: () => Promise<Order[]>;
+  ordersPolling: boolean;
 
   // --- Dashboard Stats ---
   dashboardStats: DashboardStats | null;
@@ -135,6 +136,7 @@ export const useAdminStore = create<AdminStoreState>((set, get) => ({
   // --- Initial States ---
   notifications: [],
   unreadCount: 0,
+  ordersPolling: false,
 
   dashboardStats: null,
   dashboardLoading: false,
@@ -177,6 +179,7 @@ export const useAdminStore = create<AdminStoreState>((set, get) => ({
 
   // Dashboard Stats
   fetchDashboardStats: async () => {
+    if (get().dashboardLoading) return;
     set({ dashboardLoading: true, dashboardError: null });
     try {
       const stats = await getDashboardStats();
@@ -194,6 +197,7 @@ export const useAdminStore = create<AdminStoreState>((set, get) => ({
   },
 
   fetchProducts: async (page = 1, perPage = 12) => {
+    if (get().productsLoading) return;
     set({ productsLoading: true, productsError: null });
     try {
       const { searchQuery, categoryFilter } = get();
@@ -280,6 +284,7 @@ export const useAdminStore = create<AdminStoreState>((set, get) => ({
   },
 
   fetchOrders: async () => {
+    if (get().ordersLoading) return;
     set({ ordersLoading: true, ordersError: null });
     try {
       const data = await getOrders();
@@ -318,6 +323,7 @@ export const useAdminStore = create<AdminStoreState>((set, get) => ({
   },
 
   fetchCustomers: async () => {
+    if (get().customersLoading) return;
     set({ customersLoading: true, customersError: null });
     try {
       const data = await getCustomers();
@@ -331,6 +337,7 @@ export const useAdminStore = create<AdminStoreState>((set, get) => ({
 
   // Announcements
   fetchAnnouncements: async () => {
+    if (get().announcementsLoading) return;
     set({ announcementsLoading: true, announcementsError: null });
     try {
       const data = await getAnnouncements();
@@ -396,6 +403,7 @@ export const useAdminStore = create<AdminStoreState>((set, get) => ({
 
   // Promo Codes
   fetchPromoCodes: async () => {
+    if (get().promoCodesLoading) return;
     set({ promoCodesLoading: true, promoCodesError: null });
     try {
       const data = await getPromoCodes();
@@ -447,6 +455,7 @@ export const useAdminStore = create<AdminStoreState>((set, get) => ({
 
   // Shipping Rates
   fetchShippingRates: async () => {
+    if (get().shippingRatesLoading) return;
     set({ shippingRatesLoading: true, shippingRatesError: null });
     try {
       const data = await getAdminShippingRates();
@@ -523,6 +532,8 @@ export const useAdminStore = create<AdminStoreState>((set, get) => ({
   },
 
   pollNewOrders: async () => {
+    if (get().ordersLoading || get().ordersPolling) return [];
+    set({ ordersPolling: true });
     try {
       const data = await getOrders();
       const existingOrders = get().orders;
@@ -555,6 +566,8 @@ export const useAdminStore = create<AdminStoreState>((set, get) => ({
     } catch (err) {
       console.error("Silent polling failed:", err);
       return [];
+    } finally {
+      set({ ordersPolling: false });
     }
   }
 }));

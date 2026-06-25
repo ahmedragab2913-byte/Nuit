@@ -25,22 +25,20 @@ export default function Products() {
     return { en, ar };
   };
 
-  const {
-    products,
-    productsLoading: loading,
-    productsError: error,
-    currentPage,
-    totalPages,
-    totalItems,
-    searchQuery,
-    categoryFilter,
-    setProductsFilter,
-    fetchProducts,
-    addProduct,
-    editProduct,
-    removeProduct,
-    importProductExcel
-  } = useAdminStore();
+  const products = useAdminStore((state) => state.products);
+  const loading = useAdminStore((state) => state.productsLoading);
+  const error = useAdminStore((state) => state.productsError);
+  const currentPage = useAdminStore((state) => state.currentPage);
+  const totalPages = useAdminStore((state) => state.totalPages);
+  const totalItems = useAdminStore((state) => state.totalItems);
+  const searchQuery = useAdminStore((state) => state.searchQuery);
+  const categoryFilter = useAdminStore((state) => state.categoryFilter);
+  const setProductsFilter = useAdminStore((state) => state.setProductsFilter);
+  const fetchProducts = useAdminStore((state) => state.fetchProducts);
+  const addProduct = useAdminStore((state) => state.addProduct);
+  const editProduct = useAdminStore((state) => state.editProduct);
+  const removeProduct = useAdminStore((state) => state.removeProduct);
+  const importProductExcel = useAdminStore((state) => state.importProductExcel);
 
   const [search, setSearch] = useState(searchQuery);
   const [searchParams, setSearchParams] = useSearchParams();

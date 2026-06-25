@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BarChart,
@@ -135,21 +135,26 @@ function RevenueTooltip({
 
 export default function Overview() {
   const navigate = useNavigate();
-  const {
-    dashboardStats: stats,
-    dashboardLoading: loading,
-    dashboardError,
-    fetchDashboardStats,
-    customers,
-    fetchCustomers,
-  } = useAdminStore();
+  const stats = useAdminStore((state) => state.dashboardStats);
+  const loading = useAdminStore((state) => state.dashboardLoading);
+  const dashboardError = useAdminStore((state) => state.dashboardError);
+  const fetchDashboardStats = useAdminStore((state) => state.fetchDashboardStats);
+  const customers = useAdminStore((state) => state.customers);
+  const fetchCustomers = useAdminStore((state) => state.fetchCustomers);
 
   const [activeBar, setActiveBar] = useState<number | null>(null);
 
+  const fetchDashboardStatsRef = useRef(fetchDashboardStats);
+  const fetchCustomersRef = useRef(fetchCustomers);
   useEffect(() => {
-    fetchDashboardStats();
-    fetchCustomers();
+    fetchDashboardStatsRef.current = fetchDashboardStats;
+    fetchCustomersRef.current = fetchCustomers;
   }, [fetchDashboardStats, fetchCustomers]);
+
+  useEffect(() => {
+    fetchDashboardStatsRef.current();
+    fetchCustomersRef.current();
+  }, []); // intentionally empty: fetch once on mount
 
   // ── Derived KPI values ────────────────────────────────────────
   const totalRevenue  = stats?.revenue   ?? 0;

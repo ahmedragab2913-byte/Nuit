@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Edit, Trash2, X, RefreshCw, Megaphone } from "lucide-react";
 import { useAdminStore } from "../store/adminStore";
 import type { Announcement } from "../services/api";
@@ -22,16 +22,14 @@ const parseAnnouncementText = (text: string) => {
 };
 
 export default function Announcements() {
-  const {
-    announcements,
-    announcementsLoading,
-    announcementsError,
-    fetchAnnouncements,
-    addAnnouncement,
-    editAnnouncement,
-    removeAnnouncement,
-    toggleAnnouncementActive,
-  } = useAdminStore();
+  const announcements = useAdminStore((state) => state.announcements);
+  const announcementsLoading = useAdminStore((state) => state.announcementsLoading);
+  const announcementsError = useAdminStore((state) => state.announcementsError);
+  const fetchAnnouncements = useAdminStore((state) => state.fetchAnnouncements);
+  const addAnnouncement = useAdminStore((state) => state.addAnnouncement);
+  const editAnnouncement = useAdminStore((state) => state.editAnnouncement);
+  const removeAnnouncement = useAdminStore((state) => state.removeAnnouncement);
+  const toggleAnnouncementActive = useAdminStore((state) => state.toggleAnnouncementActive);
 
   // Modal state
   const [showForm, setShowForm] = useState(false);
@@ -44,9 +42,14 @@ export default function Announcements() {
   const [priority, setPriority] = useState(0);
   const [isActive, setIsActive] = useState(true);
 
+  const fetchAnnouncementsRef = useRef(fetchAnnouncements);
   useEffect(() => {
-    fetchAnnouncements();
+    fetchAnnouncementsRef.current = fetchAnnouncements;
   }, [fetchAnnouncements]);
+
+  useEffect(() => {
+    fetchAnnouncementsRef.current();
+  }, []); // intentionally empty: fetch once on mount
 
   const handleOpenAdd = () => {
     setEditingId(null);

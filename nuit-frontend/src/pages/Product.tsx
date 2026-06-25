@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Heart, Minus, Plus, Link2, Check } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
@@ -7,7 +7,6 @@ import { getProductById, getProductImage } from "../services/api";
 import type { Product as ProductType } from "../types";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
-const sans  = { fontFamily: "'Raleway', sans-serif" };
 
 export default function Product() {
   const { id } = useParams<{ id: string }>();
@@ -38,12 +37,22 @@ export default function Product() {
   }, [id, language]);
 
   useEffect(() => {
-    fetchProducts(); // still needed for related products
+    fetchProducts(); 
   }, [fetchProducts]);
 
   useEffect(() => {
     setQty(1);
   }, [id]);
+
+  // ── تصفية وترتيب المنتجات المشابهة عشوائياً ────────────────────────
+  const relatedProducts = useMemo(() => {
+    if (!product || !products.length) return [];
+    
+    return products
+      .filter((p) => p.id !== product.id && p.category === product.category) // نفس القسم واستثناء المنتج الحالي
+      .sort(() => 0.5 - Math.random()) // ترتيب عشوائي (Shuffle)
+      .slice(0, 4); // أخذ أول 4 منتجات عشوائية فقط
+  }, [products, product]); // إعادة الحساب فقط عند تغير المنتج أو قائمة المنتجات بالكامل
 
   const handleCopyLink = async () => {
     try {
@@ -84,8 +93,6 @@ export default function Product() {
   }
 
   const isWish = wishlisted.includes(product.id);
-  const relatedProducts = products.filter((p) => p.id !== product.id).slice(0, 4);
-
   const shareUrl = window.location.href;
   const pName = getBilingualValue(product.name, product.name_ar, language);
   const shareText = t("shareMessage", { name: pName });
@@ -150,7 +157,7 @@ export default function Product() {
           <div className="border-t border-border pt-8 mb-6">
             <div className="flex items-baseline justify-between mb-6">
               <p className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
-                              style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}>
+                 style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}>
                 {formatPrice(product.price, language)}
               </p>
               <p className="text-[10px] text-muted-foreground tracking-wider">

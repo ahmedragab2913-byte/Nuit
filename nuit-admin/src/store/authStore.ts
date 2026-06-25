@@ -16,7 +16,7 @@ interface AuthStoreState {
   setUnauthenticated: () => void;
 }
 
-export const useAuthStore = create<AuthStoreState>((set) => ({
+export const useAuthStore = create<AuthStoreState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   loading: false,
@@ -24,6 +24,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   hasCheckedAuth: false,
 
   login: async (credentials) => {
+    if (get().loading) return false;
     set({ loading: true, error: null });
     try {
       // Submit Login request
@@ -53,6 +54,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   },
 
   logout: async () => {
+    if (get().loading) return;
     set({ loading: true });
     try {
       await apiLogout();
@@ -70,6 +72,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   },
 
   checkAuth: async () => {
+    if (get().loading) return;
     set({ loading: true });
     try {
       const data = await apiGetMe();

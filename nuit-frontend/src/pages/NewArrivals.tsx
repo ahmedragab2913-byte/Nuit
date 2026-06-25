@@ -23,7 +23,7 @@ export default function NewArrivals() {
   }, [fetchProducts]);
 
   const itemsPerPage = 8;
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  // const totalPages = Math.ceil(products.length / itemsPerPage);
   
   const currentArrivals = products.slice(
     (currentPage - 1) * itemsPerPage,

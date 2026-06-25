@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Search, Award, Users, X, Mail, Phone, MapPin, Calendar, DollarSign, ShoppingBag, Clock } from "lucide-react";
 import { useAdminStore } from "../store/adminStore";
 import { getCustomerDetail } from "../services/api";
@@ -61,24 +61,27 @@ const orderStatusColor = (status: string) => {
 };
 
 export default function Customers() {
-  const {
-    customers,
-    customersLoading,
-    customersError,
-    customersSearchQuery,
-    customersStatusFilter,
-    fetchCustomers,
-    setCustomersFilter,
-  } = useAdminStore();
+  const customers = useAdminStore((state) => state.customers);
+  const customersLoading = useAdminStore((state) => state.customersLoading);
+  const customersError = useAdminStore((state) => state.customersError);
+  const customersSearchQuery = useAdminStore((state) => state.customersSearchQuery);
+  const customersStatusFilter = useAdminStore((state) => state.customersStatusFilter);
+  const fetchCustomers = useAdminStore((state) => state.fetchCustomers);
+  const setCustomersFilter = useAdminStore((state) => state.setCustomersFilter);
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const [customerDetail, setCustomerDetail] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
 
+  const fetchCustomersRef = useRef(fetchCustomers);
   useEffect(() => {
-    fetchCustomers();
+    fetchCustomersRef.current = fetchCustomers;
   }, [fetchCustomers]);
+
+  useEffect(() => {
+    fetchCustomersRef.current();
+  }, []); // intentionally empty: fetch once on mount
 
   const handleCustomerClick = async (id: number) => {
     setSelectedCustomerId(id);

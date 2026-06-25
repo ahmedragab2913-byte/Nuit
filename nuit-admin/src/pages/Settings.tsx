@@ -75,7 +75,8 @@ function InputField({
 // ─── Main Settings Page ────────────────────────────────────────────────────
 
 export default function Settings() {
-  const { user, checkAuth } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
 
   // ── Profile State ──────────────────────────────────
   const [profileName, setProfileName] = useState("");

@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/authStore";
 import { useCartStore } from "../store/cartStore";
 import { useLanguageStore, formatBilingual, getBilingualValue, formatPrice } from "../store/languageStore";
 // استيراد دالة جلب أسعار الشحن العامة النظيفة من ملف الـ api
-import { placeOrder, getShippingRatesPublic, validatePromoCode } from "../services/api";
+import { placeOrder, getShippingRatesPublic, validatePromoCode, getProductImage } from "../services/api";
 import { Check, MapPin, Plus, AlertCircle } from "lucide-react";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
@@ -460,7 +460,7 @@ function translatePromoError(msg: string, lang: "en" | "ar"): string {
                 return (
                   <div key={item.product.id} className="flex gap-4 items-center">
                     <div className="w-10 h-12 bg-secondary border border-border/30 flex-shrink-0">
-                      <img src={item.product.image} alt={pName} className="w-full h-full object-cover" />
+                      <img src={getProductImage(item.product.image)} alt={pName} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0 text-left rtl:text-right">
                       <p className="text-xs font-semibold text-foreground truncate">{pName}</p>
@@ -515,7 +515,7 @@ function translatePromoError(msg: string, lang: "en" | "ar"): string {
               <div className="flex justify-between text-xs font-light text-muted-foreground">
                 <span>{t("subtotal")}</span>
                 <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
-                              style={{ fontFamily: "'Playfair Display', serif", color: "#313c45" }}>{formatPrice(cartTotal, language)}</span>
+                              style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}>{formatPrice(cartTotal, language)}</span>
               </div>
               {appliedPromo && (
                 <div className="flex justify-between text-xs font-light text-emerald-400">
@@ -525,7 +525,7 @@ function translatePromoError(msg: string, lang: "en" | "ar"): string {
               )}
               <div className="flex justify-between text-xs font-light text-muted-foreground">
                 <span>{t("shipping")}</span>
-                <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#313c45" }}>
+                <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#c4a76b" }}>
                   {dynamicShippingCost !== null ? (
                     formatPrice(dynamicShippingCost, language)
                   ) : (
@@ -540,7 +540,7 @@ function translatePromoError(msg: string, lang: "en" | "ar"): string {
             <div className="border-t border-border pt-4 mb-8">
               <div className="flex justify-between items-baseline">
                 <span className="text-xs font-light text-foreground">{language === "ar" ? "الإجمالي النهائي" : "Total"}</span>
-                <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#313c45" }}>{formatPrice(grandTotal, language)}</span>
+                <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#c4a76b" }}>{formatPrice(grandTotal, language)}</span>
               </div>
             </div>
 

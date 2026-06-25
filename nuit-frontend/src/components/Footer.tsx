@@ -81,7 +81,7 @@ export default function Footer() {
             <h3 className="text-[11px] tracking-[0.25em] uppercase text-foreground font-semibold mb-6">
               {t("contactUs")}
             </h3>
-            <ul className="space-y-4 text-sm font-light text-muted-foreground">
+            <ul className="space-y-4 text-sm font-light text-muted-foreground lining-nums">
               <li className="flex items-center gap-3 group">
                 <Mail size={14} className="group-hover:text-primary transition-colors" />
                 <a href="mailto:info@maisonnuit.com" className="hover:text-primary transition-colors break-all">

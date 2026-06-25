@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { ShoppingBag, Minus, Plus, Trash2, MapPin } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import { useLanguageStore, getBilingualValue, formatPrice } from "../store/languageStore";
+import { getProductImage } from "../services/api";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
 const sans  = { fontFamily: "'Raleway', sans-serif" };
@@ -48,7 +49,7 @@ export default function Cart() {
                     className="w-24 h-32 bg-secondary overflow-hidden flex-shrink-0 cursor-pointer border border-border/40" 
                     onClick={() => navigate(`/product/${item.product.id}`)}
                   >
-                    <img src={item.product.image} alt={pName} className="w-full h-full object-cover" />
+                    <img src={getProductImage(item.product.image)} alt={pName} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-1 gap-4">
@@ -84,7 +85,7 @@ export default function Cart() {
                         </button>
                       </div>
                       <p className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
-                              style={{ fontFamily: "'Playfair Display', serif", color: "#313c45" }}>
+                              style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}>
                         {formatPrice(item.product.price * item.quantity, language)}
                       </p>
                     </div>
@@ -101,7 +102,7 @@ export default function Cart() {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground font-light">{t("subtotal")}</span>
-                  <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#313c45" }}>{formatPrice(cartTotal, language)}</span>
+                  <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#c4a76b" }}>{formatPrice(cartTotal, language)}</span>
                 </div>
                 
                 <div className="flex justify-between text-sm">
@@ -126,7 +127,7 @@ export default function Cart() {
               <div className="border-t border-border pt-5 mb-8">
                 <div className="flex justify-between items-baseline">
                   <span className="text-sm text-foreground font-light">{t("estimatedTotal")}</span>
-                  <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#313c45" }}>
+                  <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#c4a76b" }}>
                     {formatPrice(cartTotal, language)}
                   </span>
                 </div>

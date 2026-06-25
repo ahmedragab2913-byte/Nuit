@@ -25,7 +25,7 @@ class Product extends Model
         // ─── Pricing ───────────────────────────────────
         'price',
         'sale_price',
-        'cost',
+        // NOTE: 'cost' intentionally excluded — internal business data, never expose via API.
 
         // ─── Inventory ─────────────────────────────────
         'sku',

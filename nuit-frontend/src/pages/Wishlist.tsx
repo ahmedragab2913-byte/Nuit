@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
 import { useLanguageStore, getBilingualValue, formatPrice } from "../store/languageStore";
+import { getProductImage } from "../services/api";
 import { ShoppingBag, Trash2, Heart, ArrowRight } from "lucide-react";
 
 const serif = { fontFamily: "'Playfair Display', serif" };
@@ -95,7 +96,7 @@ export default function Wishlist() {
                     onClick={() => navigate(`/product/${product.id}`)}
                   >
                     <img
-                      src={product.image}
+                      src={getProductImage(product.image)}
                       alt={displayName}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />

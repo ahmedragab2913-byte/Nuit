@@ -46,8 +46,8 @@ export default function TermsConditions() {
 
           {/* 1. Intellectual Property & Use */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <Scale size={18} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <Scale size={18} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "1. الملكية الفكرية والاستخدام" : "1. Intellectual Property & Use"}
               </h2>
@@ -61,8 +61,8 @@ export default function TermsConditions() {
 
           {/* 2. Orders & Pricing */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <ShoppingBag size={18} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <ShoppingBag size={18} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "2. الطلبات والأسعار" : "2. Orders & Pricing"}
               </h2>
@@ -76,8 +76,8 @@ export default function TermsConditions() {
 
           {/* 3. Shipping & Delivery */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <Truck size={18} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <Truck size={18} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "3. الشحن والتوصيل" : "3. Shipping & Delivery"}
               </h2>
@@ -91,8 +91,8 @@ export default function TermsConditions() {
 
           {/* 4. Return & Exchange Policy */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <RefreshCw size={17} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <RefreshCw size={17} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "4. سياسة الإرجاع والاستبدال خلال 14 يومًا" : "4. 14-Day Return & Exchange Policy"}
               </h2>
@@ -106,8 +106,8 @@ export default function TermsConditions() {
 
           {/* 5. Accuracy of Information */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <AlertCircle size={18} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <AlertCircle size={18} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "5. دقة وصحة البيانات" : "5. Accuracy of Information"}
               </h2>
@@ -121,8 +121,8 @@ export default function TermsConditions() {
 
           {/* 6. Limitation of Liability */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <ShieldAlert size={18} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <ShieldAlert size={18} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "6. حدود المسؤولية" : "6. Limitation of Liability"}
               </h2>
@@ -136,8 +136,8 @@ export default function TermsConditions() {
 
           {/* 7. Changes to Terms */}
           <section className="space-y-4">
-            <div className={`flex items-center gap-3 border-b border-border pb-2 ${isAr ? "flex-row-reverse" : ""}`}>
-              <RefreshCw size={16} className="text-primary/80" />
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <RefreshCw size={16} className="text-primary/80 shrink-0" />
               <h2 className={`text-sm font-semibold ${isAr ? "" : "tracking-[0.15em] uppercase"}`}>
                 {isAr ? "7. تعديل الشروط" : "7. Changes to Terms"}
               </h2>

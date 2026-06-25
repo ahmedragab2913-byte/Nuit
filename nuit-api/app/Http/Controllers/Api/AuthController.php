@@ -32,8 +32,8 @@ class AuthController extends Controller
 
         $user = Auth::user();
         
-        // 🔑 توليد التوكن للفرونت إند
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // 🔑 توليد التوكن للفرونت إند مع تحديد الصلاحية
+        $token = $user->createToken('auth_token', ['customer'])->plainTextToken;
 
         if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
             try {
@@ -67,19 +67,23 @@ class AuthController extends Controller
         ]);
 
         try {
+            // Create user first without role (role is not in $fillable)
             $user = User::create([
                 'name'     => $data['name'],
                 'email'    => $data['email'],
                 'phone'    => $data['phone'],
                 'password' => Hash::make($data['password']),
-                'role'     => 'customer',
             ]);
+
+            // Set role explicitly — never trust client input for this field
+            $user->role = 'customer';
+            $user->save();
 
             // 🛒 Eagerly create the cart for the user
             Cart::firstOrCreate(['user_id' => $user->id]);
 
-            // 🔑 توليد التوكن فوراً بعد التسجيل
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // 🔑 توليد التوكن فوراً بعد التسجيل مع تحديد الصلاحية
+            $token = $user->createToken('auth_token', ['customer'])->plainTextToken;
 
             if ($request->has('cart_items') && is_array($request->input('cart_items'))) {
                 try {
@@ -134,8 +138,8 @@ class AuthController extends Controller
             ], 403); // 403 Forbidden
         }
 
-        // 🔑 توليد التوكن الخاص بالأدمن
-        $token = $user->createToken('admin_token')->plainTextToken;
+        // 🔑 توليد التوكن الخاص بالأدمن مع تحديد صلاحية admin
+        $token = $user->createToken('admin_token', ['admin'])->plainTextToken;
 
         return response()->json([
             'status' => 'success',

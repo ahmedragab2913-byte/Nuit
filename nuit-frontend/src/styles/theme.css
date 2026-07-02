@@ -3,50 +3,41 @@
 :root {
   --font-size: 20px;
   
-  /* ❄️ الخلفية الأساسية: مأخوذة من درجة Pale Snow (#d5dbe2) بس مصفية سيكا عشان تدي أرضية ثلجية فاتحة ومشرقة جداً */
-  --background: #edf1f4; 
+  /* 🤍 الـ Light Mode: تباين مطلق ونظيف جداً يعتمد على الأبيض الصافي والأسود الفحمي */
+  --background: #FFFFFF;          /* خلفية بيضاء ناصعة ونقية تبرز زجاجات العطور كأنها في معرض فني */
+  --foreground: #0A0A0A;          /* نص أسود صريح وعميق لأعلى تباين وأناقة بصبرية */
   
-  /* 🖤 النص الأساسي: مأخوذ من الدرجة الأولى Charcoal Mist (#313c45) - رمادي فحم داكن جداً ومريح للعين بتباين مثالي */
-  --foreground: #313c45;
+  --card: #F9F9F9;                /* الكروت بدرجة أوف وايت خفيفة جداً ومطسية لتعطي عمق خفي */
+  --card-foreground: #0A0A0A;
   
-  /* ❄️ الكروت: أبيض ناصع زي الثلج الصافي عشان صور زجاجات العطور تبرز وتلمع فوق الخلفية */
-  --card: #ffffff; 
-  --card-foreground: #313c45;
-  
-  /* ❄️ الـ Popovers والقوائم المنسدلة */
-  --popover: #ffffff;
-  --popover-foreground: #313c45;
+  --popover: #FFFFFF;
+  --popover-foreground: #0A0A0A;
 
-  /* 💎 اللون الأساسي (Primary): مأخوذ من درجة Muted Steel Blue (#4f6271) - أزرق فولاذي فاخر جداً للأزرار والعناصر النشطة */
-  --primary: #4f6271;
-  --primary-foreground: #ffffff;
+  --primary: #0A0A0A;             /* اللون الأساسي للأزرار والتفاعلات (أسود داكن صلب) */
+  --primary-foreground: #FFFFFF;
   
-  /* ⚙️ العناصر الثانوية: مأخوذة من درجة Iced Blue (#778ca4) للفلترة والأزرار الفرعية */
-  --secondary: #d5dbe2; 
-  --secondary-foreground: #313c45;
+  --secondary: #F5F5F5;           /* عناصر ثانوية رمادية ناعمة جداً تكسر حدة البياض عند الحاجة */
+  --secondary-foreground: #0A0A0A;
   
-  /* 💬 النصوص الفرعية والمكتومة: مأخوذة من درجة Clouded Steel (#b3bfcb) بتناغم ناعم */
-  --muted: #e4e9ee; 
-  --muted-foreground: #778ca4;
+  --muted: #F5F5F5;               
+  --muted-foreground: #737373;    /* رمادي حيادي كلاسيكي للنصوص الفرعية */
   
-  --accent: #4f6271;
-  --accent-foreground: #ffffff; 
+  --accent: #1A1A1A;              /* لمسات إضافية بأسود أخف درجة */
+  --accent-foreground: #FFFFFF; 
   
-  /* 🛑 أحمر بارد مائل للوردي يتناسب مع المود الثلجي */
-  --destructive: #c94a4a;
-  --destructive-foreground: #ffffff;
+  --destructive: #BC2B2B;
+  --destructive-foreground: #FFFFFF;
 
-  /* ✨ حدود حادة ونظيفة جداً مأخوذة من روح درجات الرمادي المزرق */
-  --border: rgba(79, 98, 113, 0.15);
+  /* حدود رفيعة وشفافة جداً لتحديد العناصر بنقاء بدون تشويه بصري */
+  --border: rgba(10, 10, 10, 0.08);
   
   --input: transparent;
-  /* 📥 حقول الإدخال */
-  --input-background: #f5f7f9; 
-  --switch-background: #cbd5e1;
+  --input-background: #FFFFFF; 
+  --switch-background: #E5E5E5;
   
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: rgba(79, 98, 113, 0.4);
+  --ring: rgba(10, 10, 10, 0.15);
   
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -55,45 +46,41 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.0625rem;
   
-  /* ❄️ السايدبار: مشرق ومستوحى من بياض الثلج والنقاء النورديك */
-  --sidebar: #ffffff; 
-  --sidebar-foreground: #313c45;
-  --sidebar-primary: #4f6271;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #edf1f4;
-  --sidebar-accent-foreground: #4f6271;
-  --sidebar-border: rgba(79, 98, 113, 0.12);
-  --sidebar-ring: rgba(79, 98, 113, 0.4);
+  --sidebar: #FFFFFF; 
+  --sidebar-foreground: #0A0A0A;
+  --sidebar-primary: #0A0A0A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F5F5F5;
+  --sidebar-accent-foreground: #0A0A0A;
+  --sidebar-border: rgba(10, 10, 10, 0.06);
+  --sidebar-ring: rgba(10, 10, 10, 0.15);
 }
 
-/* توحيد الدرجة */
+/* 🕶️ الـ Dark Mode: غموض فخم يعتمد على الأسود الحالك مع نصوص بيضاء ناعمة */
 .dark {
-  /* الأرضية الليلية: رمادي كربوني مزرق عميق */
-  --background: #12181f; 
-  --foreground: #edf1f4;
+  --background: #050505;          /* أسود غامر وعميق جداً (Jet Black) يعكس هوية الليل (Nuit) */
+  --foreground: #F5F5F5;          /* نصوص باللون الأبيض العاجي المريح للعين لمنع التوهج المزعج */
   
-  /* الكروت ليلاً: درجة أفتح سيكا لتبرز فوق الخلفية الداكنة */
-  --card: #1a222d; 
-  --card-foreground: #edf1f4;
+  --card: #0F0F0F;                /* الكروت بدرجة أسود فحمية مرتفعة قليلاً لتنفصل عن الخلفية */
+  --card-foreground: #F5F5F5;
   
-  --popover: #1a222d;
-  --popover-foreground: #edf1f4;
+  --popover: #0F0F0F;
+  --popover-foreground: #F5F5F5;
 
-  /* الذهب الرملي الفاخر لعطور الـ Premium النيش */
-  --primary: #998C73;
-  --primary-foreground: #12181f;
+  --primary: #F5F5F5;             /* التفاعلات الأساسية ليلاً باللون الفاتح لتباين مثالي */
+  --primary-foreground: #050505;
   
-  --secondary: #242f3d;
-  --secondary-foreground: #edf1f4;
+  --secondary: #141414;
+  --secondary-foreground: #F5F5F5;
   
-  --muted: #1e2631;
-  --muted-foreground: #778ca4;
+  --muted: #121212;
+  --muted-foreground: #A3A3A3;   /* رمادي متوسط واضح للقراءة فوق الخلفيات القاتمة */
   
-  --border: rgba(237, 241, 244, 0.1);
-  --input-background: #161d26;
+  --border: rgba(245, 245, 245, 0.09); /* حدود خيطية باللون الأبيض الشفاف الفاخر */
+  --input-background: #0A0A0A;
   
-  --sidebar: #1a222d;
-  --sidebar-foreground: #edf1f4;
+  --sidebar: #0F0F0F;
+  --sidebar-foreground: #F5F5F5;
 }
 
 @theme inline {
@@ -146,11 +133,6 @@
     @apply bg-background text-foreground;
   }
 
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
-  */
-
   html {
     font-size: var(--font-size);
   }
@@ -198,30 +180,8 @@
   }
 }
 
-
-/* ─── Arabic Language RTL & Font Overrides ─── */
-/* html[lang="ar"],
-html[lang="ar"] body {
-  font-family: 'Tajawal', sans-serif !important;
-} */
-
-/* 👈 استثناء صريح للوجو: يمنع خط تجوال من تدمير الفونت الإنجليزي لكلمة Nuit */
-/* html[lang="ar"] [style*="Playfair Display"]:not(.logo-font) {
-  font-family: 'Tajawal', sans-serif !important;
-}
-
-html[lang="ar"] [style*="Raleway"] {
-  font-family: 'Tajawal', sans-serif !important;
-} */
-
-/* ─── Seamless Marquee Animation ────────────────────────────────────────────
-   Two identical item groups sit side-by-side inside the track.
-   Total track width = 2 × Group width.
-   Animating -50% moves exactly one Group width → seamless loop.
-   RTL: use [animation-direction:reverse] on the element (50%→0 = ←→ flip).
-────────────────────────────────────────────────────────────────────────── */
 @keyframes nuit-marquee {
-  from { transform: translate3d(0,    0, 0); }
+  from { transform: translate3d(0, 0, 0); }
   to   { transform: translate3d(-50%, 0, 0); }
 }
 

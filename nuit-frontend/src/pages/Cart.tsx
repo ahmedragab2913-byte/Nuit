@@ -16,12 +16,12 @@ export default function Cart() {
   const cartTotal = cart.reduce((s, i) => s + i.product.price * i.quantity, 0);
 
   return (
-    <div className="pt-28 px-8 lg:px-20 pb-24 min-h-screen bg-background text-foreground text-left rtl:text-right" style={sans}>
-      <div className="mb-12">
-        <p className="text-[11px] tracking-[0.45em] uppercase text-primary mb-3">
+    <div className="pt-24 sm:pt-28 px-4 sm:px-8 lg:px-20 pb-24 min-h-screen bg-background text-foreground text-left rtl:text-right" style={sans}>
+      <div className="mb-8 sm:mb-12">
+        <p className="text-[10px] sm:text-[11px] tracking-[0.45em] uppercase text-primary mb-2 sm:mb-3">
           {language === "ar" ? "اختيارك" : "Your Selection"}
         </p>
-        <h1 className="text-5xl font-light text-foreground" style={serif}>
+        <h1 className="text-3xl sm:text-5xl font-light text-foreground" style={serif}>
           {t("cartTitle")}
         </h1>
       </div>
@@ -38,54 +38,66 @@ export default function Cart() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
           {/* Items List */}
           <div className="lg:col-span-2">
             {cart.map((item, i) => {
               const pName = getBilingualValue(item.product.name, item.product.name_ar, language);
               return (
-                <div key={item.product.id} className={`flex gap-6 py-8 ${i < cart.length - 1 ? "border-b border-border" : ""}`}>
+                <div key={item.product.id} className={`flex gap-4 sm:gap-6 py-6 sm:py-8 ${i < cart.length - 1 ? "border-b border-border" : ""}`}>
+                  {/* Product Image */}
                   <div 
-                    className="w-24 h-32 bg-secondary overflow-hidden flex-shrink-0 cursor-pointer border border-border/40" 
+                    className="w-20 h-28 sm:w-24 sm:h-32 bg-secondary overflow-hidden flex-shrink-0 cursor-pointer border border-border/40" 
                     onClick={() => navigate(`/product/${item.product.id}`)}
                   >
                     <img src={getProductImage(item.product.image)} alt={pName} className="w-full h-full object-cover" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-1 gap-4">
-                      <div>
-                        <h3 className="text-lg font-light text-foreground mb-0.5" style={serif}>{pName}</h3>
-                        <p className="text-xs text-muted-foreground italic mb-1">{item.product.tagline}</p>
-                        <p className="text-[11px] tracking-widest uppercase text-primary font-medium">{item.product.size} EDP</p>
+
+                  {/* Product Details */}
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div>
+                          <h3 className="text-base sm:text-lg font-light text-foreground mb-0.5" style={serif}>{pName}</h3>
+                          <p className="text-[11px] sm:text-xs text-muted-foreground italic mb-1 line-clamp-1">{item.product.tagline}</p>
+                          <p className="text-[10px] sm:text-[11px] tracking-widest uppercase text-primary font-medium">{item.product.size} EDP</p>
+                        </div>
+                        <button 
+                          onClick={() => removeFromCart(item.product.id)} 
+                          className="text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer flex-shrink-0"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => removeFromCart(item.product.id)} 
-                        className="text-muted-foreground hover:text-foreground transition-colors mt-1 cursor-pointer flex-shrink-0"
-                      >
-                        <Trash2 size={13} />
-                      </button>
                     </div>
-                    <div className="flex items-center justify-between mt-5">
-                      <div className="flex items-center border border-border bg-background">
+
+                    {/* Quantity Selector & Price (Responsive Fixed Here) */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-3 sm:mt-5">
+                      {/* Counter */}
+                      <div className="flex items-center border border-border bg-background self-start">
                         <button 
                           onClick={() => updateQty(item.product.id, item.quantity - 1)} 
                           disabled={item.quantity <= 1}
-                          className="px-3 py-2 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors cursor-pointer"
+                          className="px-3 py-1.5 sm:py-2 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors cursor-pointer"
                         >
                           <Minus size={10} />
                         </button>
-                        <span className="px-3 text-xs text-foreground font-medium min-w-[20px] text-center" style={sans}>
+                        <span className="px-2 text-xs text-foreground font-medium min-w-[24px] text-center" style={sans}>
                           {item.quantity}
                         </span>
                         <button 
                           onClick={() => updateQty(item.product.id, item.quantity + 1)} 
-                          className="px-3 py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                          className="px-3 py-1.5 sm:py-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                         >
                           <Plus size={10} />
                         </button>
                       </div>
-                      <p className="text-l tracking-[0.16em] uppercase font-medium lining-nums"
-                              style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}>
+
+                      {/* Total Price For Item */}
+                      <p 
+                        className="text-base sm:text-lg tracking-[0.12em] sm:tracking-[0.16em] uppercase font-medium lining-nums self-end sm:self-auto"
+                        style={{ fontFamily: "'Playfair Display', serif", color: "#c4a76b" }}
+                      >
                         {formatPrice(item.product.price * item.quantity, language)}
                       </p>
                     </div>
@@ -97,12 +109,12 @@ export default function Cart() {
 
           {/* Summary Box */}
           <div className="lg:col-span-1">
-            <div className="bg-secondary/50 border border-border p-8 sticky top-28 backdrop-blur-sm">
-              <h3 className="text-xl font-light text-foreground mb-8" style={serif}>{t("orderSummary")}</h3>
+            <div className="bg-secondary/50 border border-border p-6 sm:p-8 sticky top-24 sm:top-28 backdrop-blur-sm">
+              <h3 className="text-xl font-light text-foreground mb-6 sm:mb-8" style={serif}>{t("orderSummary")}</h3>
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground font-light">{t("subtotal")}</span>
-                  <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#c4a76b" }}>{formatPrice(cartTotal, language)}</span>
+                  <span className="text-base tracking-[0.12em] uppercase font-medium lining-nums" style={{ ...serif, color: "#c4a76b" }}>{formatPrice(cartTotal, language)}</span>
                 </div>
                 
                 <div className="flex justify-between text-sm">
@@ -124,10 +136,10 @@ export default function Cart() {
                 </p>
               </div>
               
-              <div className="border-t border-border pt-5 mb-8">
+              <div className="border-t border-border pt-5 mb-6 sm:mb-8">
                 <div className="flex justify-between items-baseline">
                   <span className="text-sm text-foreground font-light">{t("estimatedTotal")}</span>
-                  <span className="text-l tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#c4a76b" }}>
+                  <span className="text-base sm:text-lg tracking-[0.12em] sm:tracking-[0.16em] uppercase font-medium lining-nums" style={{ ...serif, color: "#c4a76b" }}>
                     {formatPrice(cartTotal, language)}
                   </span>
                 </div>

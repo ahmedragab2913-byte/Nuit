@@ -18,6 +18,7 @@ export default function Nav() {
   const [visibleCount, setVisibleCount] = useState(6);
 
   const navRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null); // ريف لمراقبة كليك برا الـ More
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -47,6 +48,20 @@ export default function Nav() {
       document.documentElement.classList.remove("dark");
     }
   }, [checkAuth]);
+
+  // 2. إغلاق الـ More Dropdown عند الضغط خارجها
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const toggleTheme = () => {
     if (darkMode) {
@@ -84,7 +99,7 @@ export default function Nav() {
       if (!navRef.current) return;
 
       const navWidth = navRef.current.offsetWidth;
-      const availableWidth = (navWidth / 2) - 180; // تم زيادة المساحة قليلاً لاستيعاب زر التبديل الجديد
+      const availableWidth = (navWidth / 2) - 180;
 
       const widths = getLinkWidths();
       let accumulatedWidth = 0;
@@ -99,7 +114,7 @@ export default function Nav() {
         }
       }
 
-      if (allowedCount < 2) {
+      if (allowedCount < 4 || (widths.length - allowedCount) >= 5) {
         setVisibleCount(0);
       } else {
         if (allowedCount < widths.length) {
@@ -113,7 +128,12 @@ export default function Nav() {
               break;
             }
           }
-          setVisibleCount(Math.max(1, finalCount));
+          
+          if (finalCount < 3) {
+            setVisibleCount(0);
+          } else {
+            setVisibleCount(Math.max(1, finalCount));
+          }
         } else {
           setVisibleCount(widths.length);
         }
@@ -190,11 +210,11 @@ export default function Nav() {
 
               {overflowLinks.length > 0 && (
                 <div 
+                  ref={moreMenuRef}
                   className={`relative cursor-pointer py-1 flex items-center gap-1 transition-colors whitespace-nowrap flex-shrink-0 ${
                     language === "ar" ? "text-[12px] font-medium tracking-normal" : "text-[10px] tracking-[0.2em] uppercase lining-nums"
                   }`}
                   onClick={() => setIsMoreOpen(!isMoreOpen)}
-                  onMouseLeave={() => setIsMoreOpen(false)} 
                 >
                   <span className={isMoreActive || isMoreOpen ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}>
                     {t("more")} ({overflowLinks.length})
@@ -229,7 +249,7 @@ export default function Nav() {
           )}
         </div>
 
-        {/* 2. اللوجو (مع عزل الفونت لمنع تأثره بخط تجوال في العربي) */}
+        {/* 2. اللوجو */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-shrink-0 z-10 pointer-events-none">
           <Link
             to="/"
@@ -237,13 +257,10 @@ export default function Nav() {
             className="block pointer-events-auto select-none"
           >
             <span 
-              className="text-foreground logo-font"
+              className="text-foreground logo-font text-[16px] tracking-[0.25em] sm:text-[22px] sm:tracking-[0.45em] uppercase transition-all duration-300"
               style={{ 
                 fontFamily: "'Playfair Display', serif", 
-                fontWeight: 300, 
-                letterSpacing: '0.45em',
-                textTransform: 'uppercase',
-                fontSize: '22px'
+                fontWeight: 300
               }}
             >
               Nuit
@@ -253,17 +270,14 @@ export default function Nav() {
 
         {/* 3. بلوك الأيقونات وأدوات التحكم */}
         <div className="flex items-center gap-3 xl:gap-4 z-20 flex-1 justify-end">
-          
-          {/* 🌗 زر تبديل الـ Dark Mode (جديد) */}
           <button
             onClick={toggleTheme}
-            className="text-muted-foreground hover:text-foreground p-1.5 transition-colors rounded-sm cursor-pointer focus:outline-none border border-transparent hover:border-border/20"
+            className="hidden md:block text-muted-foreground hover:text-foreground p-1.5 transition-colors rounded-sm cursor-pointer focus:outline-none border border-transparent hover:border-border/20"
             aria-label="Toggle theme"
           >
             {darkMode ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
-          {/* زرار اللغة - يختفي في الموبايل */}
           <button
             onClick={() => setLanguage(language === "en" ? "ar" : "en")}
             className="hidden md:flex items-center gap-1 text-[10px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground font-medium px-2 py-1.5 transition-colors border border-border/20 hover:border-border/60 rounded-sm cursor-pointer focus:outline-none"
@@ -273,7 +287,6 @@ export default function Nav() {
             <span>{language === "en" ? "عربي" : "EN"}</span>
           </button>
 
-          {/* زرار البحث */}
           <button onClick={() => setIsSearchOpen(true)} className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus:outline-none p-1">
             <Search size={17} />
           </button>
@@ -282,7 +295,6 @@ export default function Nav() {
             <User size={17} />
           </Link>
 
-          {/* زرار الـ Wishlist */}
           <Link to="/wishlist" className="hidden md:block relative text-muted-foreground hover:text-foreground transition-colors p-1">
             <Heart size={17} />
             {wishCount > 0 && (
@@ -292,7 +304,6 @@ export default function Nav() {
             )}
           </Link>
 
-          {/* زرار الـ Cart */}
           <Link to="/cart" className="relative text-muted-foreground hover:text-foreground transition-colors p-1">
             <ShoppingBag size={17} />
             {cartCount > 0 && (
@@ -307,7 +318,7 @@ export default function Nav() {
       {/* الموبايل والـ Overlays */}
       {(menuOpen || visibleCount === 0) && menuOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-background/97 backdrop-blur-xl flex flex-col items-center justify-start gap-5 overflow-y-auto pt-24 pb-8 px-6 transition-colors duration-300"
+          className="fixed inset-0 z-40 bg-background/97 backdrop-blur-xl flex flex-col items-center justify-start gap-4 overflow-y-auto pt-24 pb-8 px-6 transition-colors duration-300"
           dir={language === "ar" ? "rtl" : "ltr"}
         >
           {allLinks.map((link, index) => (
@@ -315,8 +326,10 @@ export default function Nav() {
               key={index}
               to={link.path}
               onClick={() => setMenuOpen(false)}
-              className={`text-foreground font-light hover:text-primary transition-colors ${
-                language === "ar" ? "text-lg font-medium tracking-normal" : "text-xl tracking-[0.25em] uppercase"
+              className={`text-foreground font-light hover:text-primary transition-colors whitespace-nowrap text-center max-w-full ${
+                language === "ar" 
+                  ? "text-base font-medium tracking-normal" 
+                  : "text-[14px] xs:text-[16px] sm:text-xl tracking-[0.18em] xs:tracking-[0.25em] uppercase"
               }`}
               style={serif}
             >
@@ -335,7 +348,19 @@ export default function Nav() {
               <span>{language === "en" ? `Wishlist (${wishCount})` : `المفضلة (${wishCount})`}</span>
             </Link>
 
-            {/* زرار تغيير اللغة للموبايل */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground font-medium px-4 py-2 transition-colors border border-border/40 hover:border-border rounded-sm w-full justify-center cursor-pointer focus:outline-none"
+              style={sans}
+            >
+              {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+              <span>
+                {darkMode 
+                  ? (language === "en" ? "Light Mode" : "الوضع المضيء") 
+                  : (language === "en" ? "Dark Mode" : "الوضع المظلم")}
+              </span>
+            </button>
+
             <button
               onClick={() => {
                 setLanguage(language === "en" ? "ar" : "en");

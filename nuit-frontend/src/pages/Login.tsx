@@ -14,7 +14,7 @@ export default function Login() {
   const redirect = searchParams.get("redirect") || "/shop"; // Default redirect path if none is provided
 
   // 🛠️ تم إزالة setError من هنا لمنع خطأ التايب سكريبت
-  const { register, login, loading, error, clearError, isAuthenticated } = useAuthStore();
+  const { register, login, loginWithGoogle, loading, error, clearError, isAuthenticated } = useAuthStore();
   const { cart, loadFromDB, loadWishlistFromDB } = useCartStore();
   const { t, language } = useLanguageStore();
   const isAr = language === "ar";
@@ -32,6 +32,63 @@ export default function Login() {
     clearError(); 
     setLocalError(null);
   }, [isSignUp, clearError]);
+
+  // 🌐 Google Sign-in initialization and rendering
+  useEffect(() => {
+    const handleGoogleCallback = async (response: any) => {
+      if (response.credential) {
+        clearError();
+        setLocalError(null);
+        const guestItems = cart.map(i => ({ product_id: i.product.id, quantity: i.quantity }));
+        const success = await loginWithGoogle(response.credential, guestItems);
+        if (success) {
+          Promise.all([loadFromDB(), loadWishlistFromDB()]).then(() =>
+            navigate(redirect, { replace: true })
+          );
+        }
+      }
+    };
+
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "1234567890-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com";
+
+    const initGoogle = () => {
+      const g = (window as any).google;
+      if (g && g.accounts) {
+        g.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleCallback,
+        });
+        const container = document.getElementById("google-login-btn");
+        if (container) {
+          g.accounts.id.renderButton(container, {
+            type: "standard",
+            theme: "outline",
+            size: "large",
+            text: "signin_with",
+            shape: "square",
+            width: 340,
+          });
+        }
+      }
+    };
+
+    // Try immediately
+    initGoogle();
+
+    // Check periodically in case Google SDK finishes loading after component mount
+    let count = 0;
+    const interval = setInterval(() => {
+      const g = (window as any).google;
+      if (g && g.accounts) {
+        initGoogle();
+        clearInterval(interval);
+      }
+      count++;
+      if (count > 20) clearInterval(interval);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [cart, loginWithGoogle, loadFromDB, loadWishlistFromDB, navigate, redirect, clearError]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -193,6 +250,19 @@ export default function Login() {
             ) : isSignUp ? t("createAccountBtn") : t("signInBtn")}
           </button>
         </form>
+
+        {/* Google Sign-in Separator & Button */}
+        <div className="my-6 flex items-center justify-between gap-4 select-none">
+          <span className="h-[1px] bg-border/40 flex-1" />
+          <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60">
+            {t("orContinueWithGoogle")}
+          </span>
+          <span className="h-[1px] bg-border/40 flex-1" />
+        </div>
+
+        <div className="flex justify-center w-full min-h-[44px] mb-4">
+          <div id="google-login-btn" className="w-full flex justify-center hover:opacity-90 transition-opacity" />
+        </div>
 
         <p className="mt-8 text-center text-[10px] text-muted-foreground/60 leading-relaxed font-light">
           {t("termsLine")}{" "}

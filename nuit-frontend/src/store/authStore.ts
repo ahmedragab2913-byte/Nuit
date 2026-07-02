@@ -4,6 +4,7 @@ import { useCartStore } from "./cartStore";
 import {
   apiRegister,
   apiLogin,
+  apiGoogleLogin,
   apiLogout,
   apiGetMe,
   apiUpdateProfile,
@@ -54,6 +55,7 @@ interface AuthStoreState {
 
   register: (credentials: RegisterCredentials, guestCartItems?: CartSyncItem[]) => Promise<boolean>;
   login: (credentials: LoginCredentials, guestCartItems?: CartSyncItem[]) => Promise<boolean>;
+  loginWithGoogle: (googleToken: string, guestCartItems?: CartSyncItem[]) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   updateName: (name: string) => Promise<boolean>;
@@ -142,6 +144,36 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     } catch (err: unknown) {
       console.error("Login failed:", err);
       set({ error: extractErrorMessage(err, "Invalid credentials. Try again.") });
+      return false;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  loginWithGoogle: async (googleToken, guestCartItems = []) => {
+    set({ loading: true, error: null });
+    try {
+      const payload = { token: googleToken, cart_items: guestCartItems };
+      const res = await apiGoogleLogin(payload);
+      if (res.status === "success" && res.user) {
+        if (res.token) {
+          localStorage.setItem("nuit_auth_token", res.token);
+        }
+
+        // Clear the local guest cart without syncing (backend already has the merged cart)
+        useCartStore.getState().clearCart(true /* skipSync */);
+
+        set({
+          user: res.user,
+          isAuthenticated: true,
+          error: null,
+        });
+        return true;
+      }
+      return false;
+    } catch (err: unknown) {
+      console.error("Google Login failed:", err);
+      set({ error: extractErrorMessage(err, "Google authentication failed. Try again.") });
       return false;
     } finally {
       set({ loading: false });

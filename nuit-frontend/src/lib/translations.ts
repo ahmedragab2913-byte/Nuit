@@ -230,6 +230,12 @@ export const translations: Record<string, Record<string, any>> = {
     privacyPolicyLink: "Privacy Policy",
     orContinueWithGoogle: "Or continue with Google",
     googleLoginFailed: "Google Sign-in failed. Please try again.",
+    // Backend auth error translations (mapped from server messages)
+    errEmailTaken: "This email address is already registered. Please sign in instead.",
+    errRegistrationFailed: "Registration failed. Please try again.",
+    errInvalidCredentials: "Incorrect email or password. Please try again.",
+    errLoginFailed: "Sign-in failed. Please try again.",
+    errGoogleAuthFailed: "Google sign-in failed. Please try again.",
 
     // New Arrivals
     maisonAdditions: "Maison Additions",
@@ -495,6 +501,12 @@ export const translations: Record<string, Record<string, any>> = {
     privacyPolicyLink: "سياسة الخصوصية",
     orContinueWithGoogle: "أو المتابعة باستخدام جوجل",
     googleLoginFailed: "فشل تسجيل الدخول باستخدام جوجل، يرجى المحاولة مرة أخرى.",
+    // Backend auth error translations (mapped from server messages)
+    errEmailTaken: "هذا البريد الإلكتروني مسجّل بالفعل. يرجى تسجيل الدخول.",
+    errRegistrationFailed: "فشل إنشاء الحساب، يرجى المحاولة مرة أخرى.",
+    errInvalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+    errLoginFailed: "فشل تسجيل الدخول، يرجى المحاولة مرة أخرى.",
+    errGoogleAuthFailed: "فشل تسجيل الدخول بجوجل، يرجى المحاولة مرة أخرى.",
 
     // New Arrivals
     maisonAdditions: "جديد الدار",

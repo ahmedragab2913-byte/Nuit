@@ -70,15 +70,33 @@ interface AuthStoreState {
 }
 
 /**
- * Safely extracts an error message from an Axios error or generic Error.
+ * Maps a raw backend error message to a frontend translation key.
+ * This keeps error display language in sync with the user's selected language.
  */
-function extractErrorMessage(err: unknown, fallback: string): string {
+function mapErrorToKey(err: unknown, fallbackKey: string): string {
+  let raw = "";
   if (err && typeof err === "object" && "response" in err) {
-    const axiosErr = err as AxiosError<{ message?: string }>;
-    return axiosErr.response?.data?.message ?? axiosErr.message ?? fallback;
+    const axiosErr = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
+    // Prefer the first validation error field message if present
+    const errors = axiosErr.response?.data?.errors;
+    if (errors) {
+      const firstField = Object.values(errors)[0];
+      raw = Array.isArray(firstField) ? firstField[0] : "";
+    }
+    if (!raw) raw = axiosErr.response?.data?.message ?? axiosErr.message ?? "";
+  } else if (err instanceof Error) {
+    raw = err.message;
   }
-  if (err instanceof Error) return err.message;
-  return fallback;
+
+  const lower = raw.toLowerCase();
+  if (lower.includes("already been taken") || lower.includes("already registered") || lower.includes("already exists"))
+    return "errEmailTaken";
+  if (lower.includes("invalid credentials") || lower.includes("wrong password") || lower.includes("these credentials do not match"))
+    return "errInvalidCredentials";
+  if (lower.includes("google") || lower.includes("oauth"))
+    return "errGoogleAuthFailed";
+
+  return fallbackKey;
 }
 
 export const useAuthStore = create<AuthStoreState>((set, get) => ({
@@ -113,7 +131,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
       return false;
     } catch (err: unknown) {
       console.error("Registration failed:", err);
-      set({ error: extractErrorMessage(err, "Registration failed. Try again.") });
+      set({ error: mapErrorToKey(err, "errRegistrationFailed") });
       return false;
     } finally {
       set({ loading: false });
@@ -143,7 +161,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
       return false;
     } catch (err: unknown) {
       console.error("Login failed:", err);
-      set({ error: extractErrorMessage(err, "Invalid credentials. Try again.") });
+      set({ error: mapErrorToKey(err, "errLoginFailed") });
       return false;
     } finally {
       set({ loading: false });
@@ -173,7 +191,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
       return false;
     } catch (err: unknown) {
       console.error("Google Login failed:", err);
-      set({ error: extractErrorMessage(err, "Google authentication failed. Try again.") });
+      set({ error: mapErrorToKey(err, "errGoogleAuthFailed") });
       return false;
     } finally {
       set({ loading: false });

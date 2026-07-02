@@ -210,9 +210,13 @@ class AuthController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Google Login Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Google Login Error: ' . $e->getMessage(), [
+                'exception' => get_class($e),
+                'file'      => $e->getFile(),
+                'line'      => $e->getLine(),
+            ]);
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Google authentication failed.',
             ], 500);
         }

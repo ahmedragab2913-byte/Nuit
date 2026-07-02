@@ -59,13 +59,15 @@ export default function Login() {
   }, [loginWithGoogle, loadFromDB, loadWishlistFromDB, redirect, clearError]);
 
   // Initialize Google GSI exactly once on mount — avoids repeated init that triggers blocked popups
+  const initGoogleRef = useRef<(() => boolean) | null>(null);
+
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
     if (!clientId) {
       console.warn("[Google Sign-In] VITE_GOOGLE_CLIENT_ID is not set.");
     }
 
-    const initGoogle = () => {
+    const initGoogle = (locale: string) => {
       const g = (window as any).google;
       if (!g?.accounts) return false;
 
@@ -82,6 +84,8 @@ export default function Login() {
 
       const container = document.getElementById("google-login-btn");
       if (container) {
+        // Clear previous button before re-rendering with new locale
+        container.innerHTML = "";
         g.accounts.id.renderButton(container, {
           type: "standard",
           theme: "outline",
@@ -89,21 +93,30 @@ export default function Login() {
           text: "signin_with",
           shape: "square",
           width: 340,
+          locale,          // ← renders button in Arabic or English
         });
       }
       return true;
     };
 
-    if (initGoogle()) return; // SDK already loaded — done
+    // Store initGoogle in a ref so the language-change effect can call it too
+    initGoogleRef.current = () => initGoogle(useLanguageStore.getState().language === "ar" ? "ar" : "en");
+
+    if (initGoogleRef.current()) return; // SDK already loaded — done
 
     // SDK not yet loaded — poll until it arrives (max 2 seconds)
     let count = 0;
     const interval = setInterval(() => {
-      if (initGoogle() || ++count > 20) clearInterval(interval);
+      if (initGoogleRef.current?.() || ++count > 20) clearInterval(interval);
     }, 100);
 
     return () => clearInterval(interval);
   }, []); // ← runs ONCE on mount only
+
+  // Re-render Google button when language changes so it shows in the correct language
+  useEffect(() => {
+    initGoogleRef.current?.();
+  }, [language]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -139,8 +152,8 @@ export default function Login() {
     }
   };
 
-  // دمج خطأ السيرفر مع الخطأ المحلي ليعرضا في نفس المكان الفخم
-  const displayError = error || localError;
+  // Translate the error key stored in authStore — store holds translation keys, not raw strings
+  const displayError = error ? (t(error as any) || error) : localError;
 
   return (
     <div

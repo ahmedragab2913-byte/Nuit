@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useCartStore } from "../store/cartStore";
@@ -33,62 +33,77 @@ export default function Login() {
     setLocalError(null);
   }, [isSignUp, clearError]);
 
-  // 🌐 Google Sign-in initialization and rendering
+  // 🌐 Google Sign-in — stable ref so the callback is always fresh without re-initializing
+  const googleCallbackRef = useRef<(response: any) => void>(async () => {});
+
+  // Keep the ref up to date on every render (no re-init needed)
+  const stableCartRef = useRef(cart);
+  stableCartRef.current = cart;
+
+  const stableNavigate = useRef(navigate);
+  stableNavigate.current = navigate;
+
+  // Build a stable callback that reads the latest values via refs
   useEffect(() => {
-    const handleGoogleCallback = async (response: any) => {
-      if (response.credential) {
-        clearError();
-        setLocalError(null);
-        const guestItems = cart.map(i => ({ product_id: i.product.id, quantity: i.quantity }));
-        const success = await loginWithGoogle(response.credential, guestItems);
-        if (success) {
-          Promise.all([loadFromDB(), loadWishlistFromDB()]).then(() =>
-            navigate(redirect, { replace: true })
-          );
-        }
+    googleCallbackRef.current = async (response: any) => {
+      if (!response.credential) return;
+      clearError();
+      setLocalError(null);
+      const guestItems = stableCartRef.current.map(i => ({ product_id: i.product.id, quantity: i.quantity }));
+      const success = await loginWithGoogle(response.credential, guestItems);
+      if (success) {
+        await Promise.all([loadFromDB(), loadWishlistFromDB()]);
+        stableNavigate.current(redirect, { replace: true });
       }
     };
+  }, [loginWithGoogle, loadFromDB, loadWishlistFromDB, redirect, clearError]);
 
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "1234567890-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com";
+  // Initialize Google GSI exactly once on mount — avoids repeated init that triggers blocked popups
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+    if (!clientId) {
+      console.warn("[Google Sign-In] VITE_GOOGLE_CLIENT_ID is not set.");
+    }
 
     const initGoogle = () => {
       const g = (window as any).google;
-      if (g && g.accounts) {
-        g.accounts.id.initialize({
-          client_id: clientId,
-          callback: handleGoogleCallback,
+      if (!g?.accounts) return false;
+
+      g.accounts.id.initialize({
+        client_id: clientId,
+        // Route all callbacks through the ref — always calls the latest version
+        callback: (response: any) => googleCallbackRef.current(response),
+        // Disable One-Tap / automatic popup prompt — these get blocked by the browser
+        // Users click the rendered button instead (explicit user gesture = no block)
+        cancel_on_tap_outside: true,
+        auto_select: false,
+        use_fedcm_for_prompt: false,
+      });
+
+      const container = document.getElementById("google-login-btn");
+      if (container) {
+        g.accounts.id.renderButton(container, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "signin_with",
+          shape: "square",
+          width: 340,
         });
-        const container = document.getElementById("google-login-btn");
-        if (container) {
-          g.accounts.id.renderButton(container, {
-            type: "standard",
-            theme: "outline",
-            size: "large",
-            text: "signin_with",
-            shape: "square",
-            width: 340,
-          });
-        }
       }
+      return true;
     };
 
-    // Try immediately
-    initGoogle();
+    if (initGoogle()) return; // SDK already loaded — done
 
-    // Check periodically in case Google SDK finishes loading after component mount
+    // SDK not yet loaded — poll until it arrives (max 2 seconds)
     let count = 0;
     const interval = setInterval(() => {
-      const g = (window as any).google;
-      if (g && g.accounts) {
-        initGoogle();
-        clearInterval(interval);
-      }
-      count++;
-      if (count > 20) clearInterval(interval);
+      if (initGoogle() || ++count > 20) clearInterval(interval);
     }, 100);
 
     return () => clearInterval(interval);
-  }, [cart, loginWithGoogle, loadFromDB, loadWishlistFromDB, navigate, redirect, clearError]);
+  }, []); // ← runs ONCE on mount only
 
   useEffect(() => {
     if (isAuthenticated) {

@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // 🔒 تم إيقاف الـ statefulApi تماماً لضمان تفعيل الـ API Tokens بنجاح
         //$middleware->statefulApi();
 
+        // 🌐 Trust Railway / reverse-proxy headers so Laravel sees the real
+        // https:// scheme instead of http://, preventing the 301 redirect that
+        // converts POST → GET (MethodNotAllowedHttpException on google-login etc.)
+        $middleware->trustProxies(at: '*');
+
         // 🛡️ الحفاظ على حماية لوحة تحكم الأدمن بالكامل
         $middleware->alias([
             'is_admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,

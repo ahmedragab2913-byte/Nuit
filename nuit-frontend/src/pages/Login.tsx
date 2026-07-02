@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useCartStore } from "../store/cartStore";
@@ -14,7 +14,7 @@ export default function Login() {
   const redirect = searchParams.get("redirect") || "/shop"; // Default redirect path if none is provided
 
   // 🛠️ تم إزالة setError من هنا لمنع خطأ التايب سكريبت
-  const { register, login, loading, error, clearError, isAuthenticated } = useAuthStore();
+  const { register, login, loginWithGoogle, loading, error, clearError, isAuthenticated } = useAuthStore();
   const { cart, loadFromDB, loadWishlistFromDB } = useCartStore();
   const { t, language } = useLanguageStore();
   const isAr = language === "ar";
@@ -32,6 +32,78 @@ export default function Login() {
     clearError(); 
     setLocalError(null);
   }, [isSignUp, clearError]);
+
+  // 🌐 Google Sign-in — stable ref so the callback is always fresh without re-initializing
+  const googleCallbackRef = useRef<(response: any) => void>(async () => {});
+
+  // Keep the ref up to date on every render (no re-init needed)
+  const stableCartRef = useRef(cart);
+  stableCartRef.current = cart;
+
+  const stableNavigate = useRef(navigate);
+  stableNavigate.current = navigate;
+
+  // Build a stable callback that reads the latest values via refs
+  useEffect(() => {
+    googleCallbackRef.current = async (response: any) => {
+      if (!response.credential) return;
+      clearError();
+      setLocalError(null);
+      const guestItems = stableCartRef.current.map(i => ({ product_id: i.product.id, quantity: i.quantity }));
+      const success = await loginWithGoogle(response.credential, guestItems);
+      if (success) {
+        await Promise.all([loadFromDB(), loadWishlistFromDB()]);
+        stableNavigate.current(redirect, { replace: true });
+      }
+    };
+  }, [loginWithGoogle, loadFromDB, loadWishlistFromDB, redirect, clearError]);
+
+  // Initialize Google GSI exactly once on mount — avoids repeated init that triggers blocked popups
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+    if (!clientId) {
+      console.warn("[Google Sign-In] VITE_GOOGLE_CLIENT_ID is not set.");
+    }
+
+    const initGoogle = () => {
+      const g = (window as any).google;
+      if (!g?.accounts) return false;
+
+      g.accounts.id.initialize({
+        client_id: clientId,
+        // Route all callbacks through the ref — always calls the latest version
+        callback: (response: any) => googleCallbackRef.current(response),
+        // Disable One-Tap / automatic popup prompt — these get blocked by the browser
+        // Users click the rendered button instead (explicit user gesture = no block)
+        cancel_on_tap_outside: true,
+        auto_select: false,
+        use_fedcm_for_prompt: false,
+      });
+
+      const container = document.getElementById("google-login-btn");
+      if (container) {
+        g.accounts.id.renderButton(container, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "signin_with",
+          shape: "square",
+          width: 340,
+        });
+      }
+      return true;
+    };
+
+    if (initGoogle()) return; // SDK already loaded — done
+
+    // SDK not yet loaded — poll until it arrives (max 2 seconds)
+    let count = 0;
+    const interval = setInterval(() => {
+      if (initGoogle() || ++count > 20) clearInterval(interval);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []); // ← runs ONCE on mount only
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -193,6 +265,19 @@ export default function Login() {
             ) : isSignUp ? t("createAccountBtn") : t("signInBtn")}
           </button>
         </form>
+
+        {/* Google Sign-in Separator & Button */}
+        <div className="my-6 flex items-center justify-between gap-4 select-none">
+          <span className="h-[1px] bg-border/40 flex-1" />
+          <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60">
+            {t("orContinueWithGoogle")}
+          </span>
+          <span className="h-[1px] bg-border/40 flex-1" />
+        </div>
+
+        <div className="flex justify-center w-full min-h-[44px] mb-4">
+          <div id="google-login-btn" className="w-full flex justify-center hover:opacity-90 transition-opacity" />
+        </div>
 
         <p className="mt-8 text-center text-[10px] text-muted-foreground/60 leading-relaxed font-light">
           {t("termsLine")}{" "}

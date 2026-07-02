@@ -228,6 +228,8 @@ export const translations: Record<string, Record<string, any>> = {
     termsOfService: "Terms of Service",
     and: "and",
     privacyPolicyLink: "Privacy Policy",
+    orContinueWithGoogle: "Or continue with Google",
+    googleLoginFailed: "Google Sign-in failed. Please try again.",
 
     // New Arrivals
     maisonAdditions: "Maison Additions",
@@ -491,6 +493,8 @@ export const translations: Record<string, Record<string, any>> = {
     termsOfService: "شروط الخدمة",
     and: "و",
     privacyPolicyLink: "سياسة الخصوصية",
+    orContinueWithGoogle: "أو المتابعة باستخدام جوجل",
+    googleLoginFailed: "فشل تسجيل الدخول باستخدام جوجل، يرجى المحاولة مرة أخرى.",
 
     // New Arrivals
     maisonAdditions: "جديد الدار",

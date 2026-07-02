@@ -94,6 +94,11 @@ export const apiLogin = async (data: Record<string, unknown>) => {
   return res.data;
 };
 
+export const apiGoogleLogin = async (data: { token: string; cart_items?: any[] }) => {
+  const res = await api.post("/google-login", data);
+  return res.data;
+};
+
 export const apiLogout = async () => {
   const res = await api.post("/logout");
   return res.data;

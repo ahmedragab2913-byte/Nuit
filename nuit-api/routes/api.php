@@ -21,6 +21,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
         Route::post('/admin/login', [AuthController::class, 'adminLogin']);
         Route::post('/register', [AuthController::class, 'register']);
+        Route::post('/google-login', [AuthController::class, 'googleLogin']);
     });
 
     // --- 2. Public Storefront Routes (متاحة للجميع - بدون قيود) ---

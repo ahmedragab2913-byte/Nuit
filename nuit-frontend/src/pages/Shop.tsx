@@ -161,7 +161,7 @@ export default function Shop() {
             <span>{language === "ar" ? "التشكيلة الخاصة" : "Maison Collection"}</span>
           </div>
           {/* تغيير العنوان ديناميكياً */}
-          <h1 className="text-3xl md:text-5xl tracking-[0.25em] uppercase font-light text-foreground/90" style={serif}>
+          <h1 className="text-3xl md:text-5xl uppercase font-light text-foreground/90" style={serif}>
             {displayTitle}
           </h1>
           <div className="w-12 h-[1px] bg-primary/60 mx-auto" />
